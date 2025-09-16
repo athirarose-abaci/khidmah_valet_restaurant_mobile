@@ -1,12 +1,23 @@
-import { View, Image, StyleSheet, KeyboardAvoidingView, Platform, StatusBar, BackHandler, } from 'react-native';
+import {
+  View,
+  Image,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  BackHandler,
+} from 'react-native';
 import React, { useEffect, useState } from 'react';
 import BackgroundImage from '../components/BackgroundImage';
 import { Colors } from '../constants/customStyles';
 import ResetPasswordComponent from '../components/login/ResetPasswordComponent';
 import LoginComponent from '../components/login/LoginComponent';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 
 const Login = () => {
   const [currentScreen, setCurrentScreen] = useState('login');
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
@@ -17,14 +28,18 @@ const Login = () => {
           return true;
         }
         return false;
-      }
+      },
     );
     return () => subscription.remove();
   }, [currentScreen]); // <-- include currentScreen here!
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar translucent backgroundColor='transparent' barStyle="light-content" />
+    <SafeAreaView style={{ flex: 1 }} edges={['left', 'right', 'bottom']}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
       <View style={styles.main_container}>
         <BackgroundImage>
           <View style={styles.logo_container}>
@@ -34,7 +49,7 @@ const Login = () => {
             />
           </View>
 
-          <View style={styles.form_container}>
+          <View style={[styles.form_container, {backgroundColor: isDarkMode ? Colors.dark_bg : Colors.white} ]}>
             {currentScreen === 'login' ? (
               <LoginComponent
                 key={'login'}
@@ -49,7 +64,7 @@ const Login = () => {
           </View>
         </BackgroundImage>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

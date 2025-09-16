@@ -6,19 +6,34 @@ import PaymentHistoryCard from '../components/cards/PaymentHistoryCard';
 import { paymentHistoryData } from '../constants/dummyData';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PaymentHistory = () => {
   const [searchText, setSearchText] = useState('');
+  const [collapsedSections, setCollapsedSections] = useState({});
   const navigation = useNavigation();
+
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const handleDateFilterPress = () => {
     // TODO: Implement date filter action (e.g., open date picker)
   };
 
+  const toggleSection = (date) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
+  };
+
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor={Colors.white} barStyle="dark-content" />
-      <Text style={styles.title}>Payment History</Text>
+    <SafeAreaView style={[styles.container, {backgroundColor: isDarkMode ? Colors.dark_bg : Colors.white}]}>
+      <StatusBar 
+        backgroundColor={isDarkMode ? Colors.dark_bg : Colors.white} 
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+      />
+      <Text style={[styles.title, {color: isDarkMode ? Colors.white : Colors.primary}]}>Payment History</Text>
       <MaterialIcons
         name="chevron-left"
         size={35}
@@ -29,7 +44,7 @@ const PaymentHistory = () => {
         }}
       />
       <View style={styles.filterContainer}>
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, {backgroundColor: isDarkMode ? '#313131' : '#F6F7FB'}]}>
           <Ionicons
             name="search-outline"
             size={18}
@@ -37,7 +52,7 @@ const PaymentHistory = () => {
             style={{ marginHorizontal: 8 }}
           />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, {color: isDarkMode ? Colors.white : Colors.black}]}
             placeholder="Search Vehicle..."
             placeholderTextColor="#B6B6B6"
             value={searchText}
@@ -57,7 +72,7 @@ const PaymentHistory = () => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      {/* <FlatList
         data={paymentHistoryData}
         keyExtractor={(item, index) => index.toString()}
         showsVerticalScrollIndicator={false}
@@ -70,13 +85,46 @@ const PaymentHistory = () => {
                 showHeader={index === 0}
                 date={item.date}
                 totalCount={item.transactions.length}
+                index={index}
               />
             ))}
           </View>
         )}
         contentContainerStyle={{ paddingBottom: 40 }}
+      /> */}
+      <FlatList
+        data={paymentHistoryData}
+        keyExtractor={(item, index) => index.toString()}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.sectionContainer}>
+            {/* Header always visible */}
+            <PaymentHistoryCard
+              showHeader={true}
+              date={item.date}
+              totalCount={item.transactions.length}
+              isCollapsed={collapsedSections[item.date]}
+              onHeaderPress={() => toggleSection(item.date)}
+            />
+
+            {/* Render transactions only if expanded */}
+            {!collapsedSections[item.date] &&
+              item.transactions.map((txn, index) => (
+                <PaymentHistoryCard
+                  key={txn.id}
+                  item={txn}
+                  showHeader={false}
+                  date={item.date}
+                  totalCount={item.transactions.length}
+                  index={index}
+                />
+              ))}
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 40 }}
       />
-    </View>
+
+    </SafeAreaView>
   );
 };
 
@@ -85,12 +133,10 @@ export default PaymentHistory;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
   },
   title: {
     fontFamily: 'Inter-Medium',
     fontSize: 20,
-    color: Colors.primary,
     textAlign: 'center',
     marginTop: 20,
   },
@@ -110,7 +156,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F6F7FB',
     borderRadius: 7,
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -123,7 +168,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 5,
     paddingRight: 10,
-    color: '#000',
     fontFamily: 'Inter-Regular',
     fontSize: 14,
   },

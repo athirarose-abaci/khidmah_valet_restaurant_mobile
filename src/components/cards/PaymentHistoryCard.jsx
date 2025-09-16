@@ -1,49 +1,65 @@
-import { StyleSheet, Text, View, Image } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { Colors } from '../../constants/customStyles';
+import { useSelector } from 'react-redux';
 
-const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount }) => {
+const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index, isCollapsed, onHeaderPress }) => {
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, {backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white}]}>
       {showHeader && (
-        <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          style={[styles.headerContainer, {backgroundColor: isDarkMode ? '#313131' : '#F9F9F9'}]}
+          onPress={onHeaderPress}
+        >
           <Text style={styles.headerDate}>{date}</Text>
-          <Text style={styles.headerCount}>{`${totalCount} Transactions`}</Text>
+          <Text style={styles.headerCount}>
+            {`${totalCount} Transactions ${isCollapsed ? '▼' : '▲'}`}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {item && (
+        <View style={styles.container}>
+          <Image source={item.image} style={styles.avatar} />
+          <Text style={[styles.plate, {color: isDarkMode ? Colors.secondary : Colors.primary}]}>{item.plate}</Text>
+
+          <View style={[styles.amountContainer, {backgroundColor: isDarkMode ? Colors.small_container_dark_bg : '#F9F9F9'}]}>
+            <Text style={[styles.amount,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.amount}</Text>
+            <Text style={[styles.currency,{color: isDarkMode ? Colors.white : '#909090'}]}> AED</Text>
+          </View>
+
+          <Text style={[styles.time,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.time}</Text>
         </View>
       )}
 
-      <View style={styles.container}>
-        <Image source={item.image} style={styles.avatar} />
-        <Text style={styles.plate}>{item.plate}</Text>
-
-        <View style={styles.amountContainer}>
-          <Text style={styles.amount}>{item.amount}</Text>
-          <Text style={styles.currency}> AED</Text>
-        </View>
-
-        <Text style={styles.time}>{item.time}</Text>
-      </View>
-      <View style={styles.divider} />
+      {item && index < totalCount - 1 && <View style={styles.divider} />}
     </View>
   );
 };
+
 
 export default PaymentHistoryCard;
 
 const styles = StyleSheet.create({
   mainContainer: {
       width: '100%',
-      backgroundColor: Colors.white,
   },
   headerContainer: {
     width: '100%',  
-    backgroundColor: '#F6F7FB',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 25, 
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginVertical: 8,
+    // Accent strip
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.primary,
   },
+  
   headerDate: {
     fontFamily: 'Inter-Regular',
     fontSize: 12,
@@ -77,31 +93,26 @@ const styles = StyleSheet.create({
   plate: {
     flex: 1,
     fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    color: Colors.primary,
+    fontSize: 15,
   },
   amountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F6F7FB',
     borderRadius: 20,
-    paddingHorizontal: 17,
+    paddingHorizontal: 10,
     paddingVertical: 2,
     marginRight: 35,
   },
   amount: {
     fontFamily: 'Inter-Bold',
-    fontSize: 16,
-    color: Colors.black,
+    fontSize: 15,
   },
   currency: {
     fontFamily: 'Inter-Light',
     fontSize: 14,
-    color: '#313131',
   },
   time: {
     fontFamily: 'Inter-Regular',
     fontSize: 13,
-    color: '#909090',
   },
 });

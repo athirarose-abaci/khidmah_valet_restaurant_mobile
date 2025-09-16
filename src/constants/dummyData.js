@@ -23,7 +23,7 @@ export const paymentHistoryData = [
     ],
   },
   {
-    date: 'JUL 30, 2025',
+    date: 'JUL 11, 2025',
     transactions: [
       { id: '5', plate: 'A 34893', amount: '10.50', time: '8:00 PM', image: require('../assets/images/car_avatar.png') },
       { id: '6', plate: 'A 34893', amount: '10.50', time: '9:00 PM', image: require('../assets/images/car_avatar.png') },
@@ -38,14 +38,14 @@ export const paymentHistoryData = [
     ],
   },
   {
-    date: 'JUN 28, 2025',
+    date: 'JUN 18, 2025',
     transactions: [
       { id: '10', plate: 'A 34893', amount: '10.50', time: '8:00 PM', image: require('../assets/images/car_avatar.png') },
       { id: '11', plate: 'A 34893', amount: '10.50', time: '9:00 PM', image: require('../assets/images/car_avatar.png') },
     ],
   },
   {
-    date: 'JUN 7, 2025',
+    date: 'MAY 7, 2025',
     transactions: [
       { id: '12', plate: 'A 34893', amount: '10.50', time: '8:00 PM', image: require('../assets/images/car_avatar.png') },
       { id: '13', plate: 'A 34893', amount: '10.50', time: '9:00 PM', image: require('../assets/images/car_avatar.png') },

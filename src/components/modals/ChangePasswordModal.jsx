@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, StatusBar, } from 'react-native';
+import React, { useState } from 'react';
+import { ScaledSheet, scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
+import { useSelector } from 'react-redux';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,6 +14,8 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const handleSave = () => {
     // Add your validation logic here
@@ -38,14 +42,12 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
       animationType="fade"
       onRequestClose={handleCancel}
       statusBarTranslucent={true}>
-      <StatusBar backgroundColor="rgba(0, 0, 0, 0.5)" barStyle="light-content" />
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>Change Password</Text>
-
+      <View style={[ styles.modalContent, { backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white,},]} >          
+      <Text style={[styles.title,{ color: isDarkMode ? Colors.white : Colors.font_primary },]}>Change Password</Text>
           <View style={styles.formContainer}>
             {/* Current Password */}
-            <Text style={styles.label}>Current Password</Text>
+            <Text style={[styles.label,{ color: isDarkMode ? Colors.white : Colors.font_primary },]}>Current Password</Text>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -67,7 +69,7 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
             </View>
 
             {/* New Password */}
-            <Text style={styles.label}>New Password</Text>
+            <Text style={[styles.label,{ color: isDarkMode ? Colors.white : Colors.font_primary },]}>New Password</Text>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -89,7 +91,7 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
             </View>
 
             {/* Confirm New Password */}
-            <Text style={styles.label}>Confirm New Password</Text>
+            <Text style={[styles.label,{ color: isDarkMode ? Colors.white : Colors.font_primary },]}>Confirm New Password</Text>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -112,21 +114,32 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
           </View>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={handleCancel}>
-              <Text style={[styles.buttonText, styles.cancelButtonText]}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: isDarkMode ? Colors.small_container_dark_bg : '#F5F5F5',
+                borderWidth: isDarkMode ? 0 : 1,    
+                borderColor: isDarkMode ? 'transparent' : '#E0E0E0',
+              },
+            ]}
+            onPress={handleCancel}>
+            <Text
+              style={[
+                styles.buttonText,
+                { color: isDarkMode ? Colors.white : '#666666' },
+              ]}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.saveButton]}
+            onPress={handleSave}>
+            <Text style={[styles.buttonText, styles.saveButtonText]}>
+              Save
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}>
-              <Text style={[styles.buttonText, styles.saveButtonText]}>
-                Change Password
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -143,10 +156,10 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: width * 0.83,
-    height: height * 0.58,
     backgroundColor: 'white',
     borderRadius: 20,
-    padding: 24,
+    paddingVertical: 24,  
+    paddingHorizontal: 24,
     alignItems: 'center',
     elevation: 10,
     shadowColor: '#000',
@@ -156,24 +169,22 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    maxHeight: height * 1.30,
+    maxHeight: height * 0.85, 
   },
   title: {
     fontSize: 20,
-    fontFamily: 'Poppins-Bold',
-    color: Colors.font_primary,
+    fontFamily: 'Inter-Bold',
     marginBottom: 30,
     textAlign: 'center',
     lineHeight: 28,
   },
   formContainer: {
     width: '100%',
-    marginBottom: 20,
+    // marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#333333',
+    fontFamily: 'Inter-Regular',
     marginBottom: 8,
     marginTop: 12,
     lineHeight: 22,
@@ -191,7 +202,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 13,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Inter-Regular',
     color: '#333333',
     lineHeight: 22,
   },
@@ -203,6 +214,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+    marginTop: '6%',
     gap: 12,
   },
   button: {
@@ -221,8 +233,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary, 
   },
   buttonText: {
-    fontSize: 12,
-    fontFamily: 'Poppins-SemiBold', 
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold', 
     fontWeight: '600',
     lineHeight: 22,
   },

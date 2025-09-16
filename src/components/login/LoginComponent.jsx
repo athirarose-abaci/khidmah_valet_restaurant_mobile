@@ -1,22 +1,25 @@
 import { useContext, useState } from 'react';
 import { ToastContext } from '../../context/ToastContext';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { userLogin } from '../../apis/authentication';
 import { setAuthState, setLoginCredentials } from '../../../store/authSlice';
 import { storeData } from '../../helpers/asyncStorageHelper';
-import { ActivityIndicator, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import CookieManager from '@react-native-cookies/cookies';
 import Error from '../../helpers/Error';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
+import { Colors } from '../../constants/customStyles';
 
 const LoginComponent = ({ setCurrentScreen }) => {
   const [userEmail, setUserEmail] = useState(null);
   const [password, setPassword] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
   const toastContext = useContext(ToastContext);
   const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -48,7 +51,6 @@ const LoginComponent = ({ setCurrentScreen }) => {
               })
               .catch(err => {
                 // Pass
-                //Comment added for push
               });
           }
         }
@@ -56,6 +58,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
         console.log('catch error', error);
         setPassword(null);
         let err_msg = Error(error);
+        console.log('err_msg', err_msg);
         toastContext.showToast(err_msg, 'short', 'error');
       } finally {
         setIsLoading(false);
@@ -64,16 +67,25 @@ const LoginComponent = ({ setCurrentScreen }) => {
   };
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+    >
     <ScrollView style={{ flex: 1 }} 
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled" 
       keyboardDismissMode='on-drag'
     >
-      <Text style={styles.title}>Sign in</Text>
+      <Text style={[styles.title, {color: isDarkMode ? Colors.white : Colors.primary}]}>Sign in</Text>
       <View style={styles.field_container}>
-        <Text style={styles.label}>Email Address</Text>
-        <View style={styles.input_container}>
-          <View style={styles.icon_container}>
+        <Text style={[styles.label, {color: isDarkMode ? '#D3D3D3' : Colors.primary}]}>Email Address</Text>
+        <View style={[
+            styles.input_container, 
+            {backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
+            borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border
+          }]}>
+          <View style={[styles.icon_container, {borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA'}]}>
             <Image
               source={require('../../assets/images/email.png')}
               style={styles.icon}
@@ -83,7 +95,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <TextInput
             style={styles.input}
             placeholder="emailaddress@domain.com"
-            placeholderTextColor={'#62808A'}
+            placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
             value={userEmail}
             onChangeText={text => setUserEmail(text)}
             keyboardType="email-address"
@@ -92,25 +104,31 @@ const LoginComponent = ({ setCurrentScreen }) => {
         </View>
       </View>
       <View style={[styles.field_container, { marginTop: 5 }]}>
-        <Text style={styles.label}>Password</Text>
-        <View style={styles.input_container}>
-          <View style={styles.icon_container}>
+        <Text style={[styles.label, {color: isDarkMode ? '#D3D3D3' : Colors.primary}]}>Password</Text>
+        <View style={[
+            styles.input_container, 
+            {backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
+            borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border
+          }]}>
+          <View style={[styles.icon_container, {borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA'}]}>
             <Image
               source={require('../../assets/images/password.png')}
               style={styles.icon}
+              tintColor={'#rgba(34, 185, 190,0.5)'}
             />
           </View>
           <TextInput
-            style={[styles.input, { width: '70%' }]}
+            style={[styles.input, { width: '73%' }]}
             placeholder="**************"
-            placeholderTextColor={'#62808A'}
+            placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
             value={password}
             onChangeText={text => setPassword(text)}
             secureTextEntry={!showPassword}
           />
-          <View style={styles.icon_container}>
+          <View style={[styles.eye_icon_container, {borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA'}]}>
             <Ionicons
               name={!showPassword?"eye-outline":"eye-off-outline"}
+              color={isDarkMode ? '#D3D3D3' : Colors.black}
               size={20}
               onPress={() => {
                 setShowPassword(!showPassword);
@@ -131,19 +149,19 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <>
-            <Text style={styles.button_label}>Sign In</Text>
+            <Text style={[styles.button_label, {color: isDarkMode ? '#F5F5F5' : Colors.white}]}>Sign In</Text>
             <MaterialIcons
               name="login"
-              color={'white'}
+              color={isDarkMode ? '#F5F5F5' : Colors.white}
               size={23}
-              style={{ marginLeft: 5 }}
+              style={{ marginLeft: 15 }}
             />
           </>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.field_container}
+        style={styles.fgp_container}
         onPress={() => setCurrentScreen('forgotPassword')}
       >
         <Text
@@ -153,43 +171,50 @@ const LoginComponent = ({ setCurrentScreen }) => {
         </Text>
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   title: {
-    color: '#114B5F',
     fontSize: 30,
     fontFamily: 'Poppins-Medium',
+    paddingTop: 10,
+    marginBottom: 10,
+    color: Colors.primary,
   },
   field_container: {
     width: '100%',
     paddingBottom: 10,
-    marginTop: 20,
+    marginTop: 40,
   },
   label: {
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
-    color: '#5F687C',
+    marginBottom: 5,
   },
   input_container: {
     width: '100%',
     height: 55,
-    backgroundColor: 'rgba(34, 185, 190,0.1)',
     borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 5,
     borderWidth: 1,
-    borderColor: '#DDE8EA',
   },
   icon_container: {
     width: '15%',
     height: '85%',
     borderRightWidth: 1,
-    borderColor: '#DDE8EA',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  eye_icon_container: {
+    width: '12%', 
+    height: '85%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingRight: 25,   
   },
   icon: {
     width: 20,
@@ -209,18 +234,20 @@ const styles = StyleSheet.create({
   button: {
     width: '70%',
     height: 55,
-    backgroundColor: '#114B5F',
+    backgroundColor: Colors.primary,
     borderRadius: 10,
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 25,
+    marginTop: 45,
   },
   button_label: {
-    color: 'white',
     fontFamily: 'Poppins-Medium',
     fontSize: 16,
+  },
+  fgp_container: {
+    marginTop: 15,
   },
   forgot_password: {
     alignSelf: 'center',

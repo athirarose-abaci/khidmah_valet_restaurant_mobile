@@ -1,39 +1,71 @@
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Switch, StatusBar, ImageBackground } from 'react-native';
+import { ScaledSheet, scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../constants/customStyles';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import EditProfileModal from '../components/modals/EditProfileModal';
 import ChangePasswordModal from '../components/modals/ChangePasswordModal';
 import ConfirmationModal from '../components/modals/ConfirmationModal'; 
+import { useDispatch, useSelector } from 'react-redux';
+import { setIsDarkMode } from '../../store/themeSlice';
+import { logoutUser, userProfile } from '../apis/authentication';
+import { setAuthState } from '../../store/authSlice';
+import { removeData } from '../helpers/asyncStorageHelper';
+import { clearCookies } from '../helpers/clearCookieHelper';
+import { ToastContext } from '../context/ToastContext';
+import Error from '../helpers/Error';
 
 const Profile = ({}) => {
-  const [isLoading,setIsLoading]=useState(false)
   const navigation = useNavigation();
+  const [isLoading,setIsLoading] = useState(false)
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
-  const [profileInfo, setProfileInfo] = useState({first_name: 'Restaurant', last_name: 'Name', avatar: null});
+  const [profileInfo, setProfileInfo] = useState(null);
 
-//   const handleLogout = async () => {
-//     setIsLogoutConfirmVisible(false);
-//     setIsLoading(true);
-//     try {
-//       await logoutUser();
-//       dispatch(setAuthState({}));
-//       clearCookies();
-//       await removeData('data');
-//       setIsLoading(false);
-//     } catch (error) {
-//       let err_msg = Error(error);
-//       toastContext.showToast(err_msg, 'short', 'error');
-//     }finally{
-//       setIsLoading(false);
-//     }
-//   };
+  const dispatch = useDispatch();
+  const isFocused = useIsFocused();
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
+  const toastContext = useContext(ToastContext);
+
+  useEffect(() => {
+    profileData();
+  }, [isFocused]);
+  
+  const profileData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await userProfile();
+      console.log('profileData', response);
+      setProfileInfo(response);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }finally{
+      setIsLoading(false);
+    }
+  }
+  
+  const handleLogout = async () => {
+    setIsLogoutConfirmVisible(false);
+    setIsLoading(true);
+    try {
+      await logoutUser();
+      dispatch(setAuthState({}));
+      clearCookies();
+      await removeData('data');
+      setIsLoading(false);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }finally{
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -73,7 +105,7 @@ const Profile = ({}) => {
               />
             </View>
             
-            <Text style={styles.userName}>Restaurant Name</Text>
+            <Text style={styles.userName}>{profileInfo?.entity?.name}</Text>
         {/*             
             <View style={styles.driverIdContainer}>
               <Text style={styles.driverIdText}>Driver ID</Text>
@@ -82,7 +114,7 @@ const Profile = ({}) => {
         </View>
 
         {/* BOTTOM SECTION*/}
-        <View style={styles.bottomSection}>
+        <View style={[styles.bottomSection, {backgroundColor: isDarkMode ? Colors.dark_bg : Colors.white}]}>
           <ScrollView 
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
@@ -96,25 +128,25 @@ const Profile = ({}) => {
                     resizeMode="contain"
                   />
                 </View>
-                <Text style={[styles.settingText, {color: '#333333'}]}>
+                <Text style={[styles.settingText, {color: isDarkMode ? Colors.white : Colors.font_primary}]}>
                   Dark Mode
                 </Text>
               </View>
               <Switch
                 trackColor={{
-                  false: '#478AAA',
-                  true: 'rgba(71, 138, 170, 0.42)',
+                  false: 'rgba(71, 138, 170, 0.42)',
+                  true: '#478AAA',
                 }}
                 thumbColor="#2B617B"
                 ios_backgroundColor="#E4E4E4"
-                // onValueChange={onToggleDarkMode}
-                // value={isDarkMode}
+                onValueChange={() => dispatch(setIsDarkMode(!isDarkMode))}
+                value={isDarkMode}
               />
             </View>
 
             <View style={styles.divider} />
             <View>
-              <Text style={styles.profileText}>PROFILE</Text>
+              <Text style={[styles.profileText,{color: isDarkMode ? '#4FB7C5' : Colors.black}]}>PROFILE</Text>
             </View>
 
             <TouchableOpacity style={styles.settingItem} onPress={() => setIsEditModalVisible(true)}>
@@ -126,7 +158,7 @@ const Profile = ({}) => {
                     resizeMode="contain"
                   />
                 </View>
-                <Text style={[styles.settingText, {color: '#333333'}]}>
+                <Text style={[styles.settingText, {color: isDarkMode ? Colors.white : Colors.font_primary}]}>
                   Edit Restaurant Details
                 </Text>
               </View>
@@ -144,7 +176,7 @@ const Profile = ({}) => {
                     resizeMode="contain"
                   />
                 </View>
-                <Text style={[styles.settingText, {color: '#333333'}]}>
+                <Text style={[styles.settingText, {color: isDarkMode ? Colors.white : Colors.font_primary}]}>
                   Change Password
                 </Text>
               </View>
@@ -158,7 +190,7 @@ const Profile = ({}) => {
                 <View style={[styles.iconContainer, styles.logoutIconContainer]}>
                   <AntDesign name="logout" size={22} color="#FF4141" />
                 </View>
-                <Text style={[styles.settingText, styles.logoutText]}>
+                <Text style={[styles.settingText, styles.logoutText, {color: isDarkMode ? Colors.white : Colors.font_primary}]}>
                   Logout
                 </Text>
               </View>
@@ -177,7 +209,10 @@ const Profile = ({}) => {
         isVisible={isEditModalVisible}
         onRequestClose={() => setIsEditModalVisible(false)}
         profileInfo={profileInfo}
-        onProfileUpdate={(updated) => setProfileInfo(updated)}
+        onProfileUpdate={updatedInfo => {
+          setProfileInfo(updatedInfo);
+          setIsEditModalVisible(false);
+        }}
       />
       <ChangePasswordModal
         isVisible={isChangePasswordModalVisible}
@@ -186,9 +221,7 @@ const Profile = ({}) => {
       <ConfirmationModal
         isVisible={isLogoutConfirmVisible}
         onRequestClose={() => setIsLogoutConfirmVisible(false)}
-        onConfirm={() => {
-        //   handleLogout();
-        }}
+        onConfirm={handleLogout}
         title="Logout"
         message="Are you sure you want to logout?"
         confirmText="Logout"
@@ -199,7 +232,7 @@ const Profile = ({}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = ScaledSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -208,24 +241,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    marginTop: -30,
     marginLeft: 10,
   },
   // TOP SECTION STYLES
   topSection: {
-    // backgroundColor: Colors.primary,
     paddingHorizontal: 15,
-    paddingTop: 15,
     paddingBottom: 30,
   },
   // BOTTOM SECTION STYLES  
   bottomSection: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
+    borderTopLeftRadius: scale(40), 
+    borderTopRightRadius: scale(40),
     marginTop: 10, 
-    paddingHorizontal: 20,
+    paddingHorizontal: 20,        
     paddingTop: 10, 
   },
   scrollContent: {
@@ -241,7 +270,6 @@ const styles = StyleSheet.create({
     width: '85%',
     height: '100%',
     justifyContent: 'center',
-    marginTop: '10%',
   },
   logoImage: {
     width: '50%',
@@ -257,29 +285,26 @@ const styles = StyleSheet.create({
   profileImageContainer: {
     position: 'relative',
     marginBottom: 12,
-    // borderWidth: 1,
     borderRadius: 100,
   },
   profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 6,
+    width: scale(100),         
+    height: scale(100),
+    borderRadius: scale(60),
+    borderWidth: scale(4),
     borderColor: '#D9D9D9',
     elevation: 5,
   },
   userName: {
-    fontSize: 28,
-    // fontWeight: 'bold',
+    fontSize: moderateScale(23),
     color: Colors.white,
-    marginBottom: 3,
+    marginBottom: 50,            
     alignSelf: 'center',
     fontFamily: 'Poppins-SemiBold',
   },
   driverIdContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    // marginTop: 10, 
   },
   driverIdText: {
     fontFamily: 'Poppins-Regular',
@@ -307,10 +332,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingText: {
-    fontSize: 14,
-    marginLeft: 12,
-    fontFamily: 'Segoe UI',
-    lineHeight: 18,
+    fontSize: moderateScale(12), 
+    marginLeft: 12,              
+    fontFamily: 'Inter-Regular',
+    lineHeight: moderateScale(18),
   },
   settingIcon: {
     width: 22,
@@ -324,8 +349,7 @@ const styles = StyleSheet.create({
   },
   profileText: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#333333',
+    fontFamily: 'Inter-SemiBold',
     marginTop: 15,
     paddingHorizontal: 35,
   },
@@ -333,7 +357,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEFEF',
   },
   logoutText: {
-    color: '#FF4141',
+    color: '#909090',
   },
   firstSettingItem: {
     marginTop: 15,
@@ -346,7 +370,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 20,
     paddingHorizontal: 35,
-    marginTop: 20,
+    marginTop: 50,
   },
   versionText: {
     fontSize: 12,

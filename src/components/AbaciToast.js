@@ -1,7 +1,6 @@
 import React, {useContext} from 'react';
-import {Text, View} from 'react-native';
-import Animated, {BounceInUp, BounceOutUp} from 'react-native-reanimated';
-import {ToastContext} from '../context/ToastContext';
+import { Text, View } from 'react-native';
+import { ToastContext } from '../context/ToastContext';
 
 export default function AbaciToast() {
   const toastContext = useContext(ToastContext);
@@ -20,9 +19,10 @@ export default function AbaciToast() {
           borderRadius: 5,
           justifyContent: 'center',
           padding: 10,
-          alignItems:'center'
+          alignItems: 'center',
         }}>
-        <Text style={{color: 'white',fontFamily:'Poppins-Medium',fontSize:15}}>
+        <Text
+          style={{color: 'white', fontFamily: 'Poppins-Medium', fontSize: 15}}>
           {toastContext.toastMessage}
         </Text>
       </View>

@@ -14,7 +14,7 @@ const MainRouter = () => {
 
   return (
   <NavigationContainer>
-    {authState.authenticated ? (
+    {!authState.authenticated ? (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {publicRoutes.map((route, idx) => (
           <Stack.Screen key={idx} name={route.name} component={route.component} />

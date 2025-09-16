@@ -1,11 +1,4 @@
-import {
-  Dimensions,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import {useSelector} from 'react-redux';
 import {Colors} from '../../constants/customStyles';
 
@@ -32,38 +25,39 @@ const ConfirmationModal = ({
         <View
           style={[
             styles.modalContent,
-            {backgroundColor: isDarkMode ? Colors.khidmah_black : 'white'},
+            {backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white},
           ]}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title,{color: isDarkMode ? '#4FB7C5' : Colors.font_primary}]}>{title}</Text>
           <Text
             style={[
               styles.message,
-              {color: isDarkMode ? Colors.khidmah_gray : '#666'},
+              {color: isDarkMode ? Colors.white : '#666'},
             ]}>
             {message}
           </Text>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: isDarkMode
+                  ? Colors.small_container_dark_bg
+                  : '#F9F9F9',
+                borderWidth: isDarkMode ? 0 : 1,   
+                borderColor: isDarkMode ? 'transparent' : '#BDBDBD',
+              },
+            ]}
+            onPress={onRequestClose}>
+            <Text
               style={[
-                styles.button,
-                styles.cancelButton,
-                {
-                  backgroundColor: isDarkMode
-                    ? Colors.dark_mode_gray
-                    : '#F9F9F9',
-                },
-              ]}
-              onPress={onRequestClose}>
-              <Text
-                style={[
-                  styles.buttonText,
-                  styles.cancelButtonText,
-                  {color: isDarkMode ? Colors.black : '#62808A'},
-                ]}>
-                {cancelText}
-              </Text>
-            </TouchableOpacity>
+                styles.buttonText,
+                { color: isDarkMode ? Colors.white : '#62808A' },
+              ]}>
+              {cancelText}
+            </Text>
+          </TouchableOpacity>
+
 
             <TouchableOpacity
               style={[styles.button, styles.logoutButton]}
@@ -102,14 +96,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontFamily: 'Poppins-Bold',
-    color: Colors.font_primary,
+    fontFamily: 'Inter-Bold',
     marginBottom: 35,
     lineHeight: 26,
   },
   message: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Inter-Regular',
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 20,
@@ -128,15 +121,13 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#F9F9F9',
-    borderWidth: 1,
-    borderColor: '#BDBDBD',
   },
   logoutButton: {
     backgroundColor: Colors.primary,
   },
   buttonText: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Inter-Regular',
     textAlign: 'center',
   },
   cancelButtonText: {

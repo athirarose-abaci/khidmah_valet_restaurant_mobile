@@ -1,35 +1,40 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, TextInput, } from 'react-native';
 import {Colors} from '../../constants/customStyles';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
+import { useSelector } from 'react-redux';
+import ProfileImagePicker from '../ProfileImagePicker';
 
 
 const {width, height} = Dimensions.get('window');
 
-const EditProfileModal = ({ isVisible, onRequestClose, profileInfo = {}, onProfileUpdate, }) => {
-  const [firstName, setFirstName] = useState(profileInfo.first_name || '');
-  const [lastName, setLastName] = useState(profileInfo.last_name || '');
-  const [profileImage, setProfileImage] = useState( profileInfo.avatar ? {uri: profileInfo.avatar} : null, );
+const EditProfileModal = ({ isVisible, onRequestClose, profileInfo, onProfileUpdate, }) => {
+  const [entityName, setEntityName] = useState(profileInfo?.entity?.name || '');
+  const [profileImage, setProfileImage] = useState(null);
+  const [selectedImageBase64, setSelectedImageBase64] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
 
-  // Update form fields whenever the modal opens or profile info changes
+  console.log('profileInfo', profileInfo);
+
   useEffect(() => {
-    setFirstName(profileInfo.first_name || '');
-    setLastName(profileInfo.last_name || '');
-    setProfileImage(profileInfo.avatar ? {uri: profileInfo.avatar} : null); }, [profileInfo, isVisible]);
+    if(profileInfo){
+      setEntityName(profileInfo?.entity?.name || '');
+      if(profileInfo?.avatar){
+        setProfileImage({uri: profileInfo?.avatar});
+      }else{
+        setProfileImage(null);
+      }
+    }
+  }, [profileInfo, isVisible]);
 
   const handleSave = () => {
     const updatedProfile = {
       ...profileInfo,
-      first_name: firstName,
-      last_name: lastName,
+      entity_name: entityName,
       avatar: profileImage?.uri,
     };
-
-    if (onProfileUpdate) {
-      onProfileUpdate(updatedProfile);
-    }
-
-    onRequestClose();
   };
 
   return (
@@ -39,55 +44,109 @@ const EditProfileModal = ({ isVisible, onRequestClose, profileInfo = {}, onProfi
       animationType="fade"
       onRequestClose={onRequestClose}
       statusBarTranslucent={false}
-      presentationStyle="overFullScreen">
+      presentationStyle="overFullScreen"
+    >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>Edit Profile</Text>
+        <View
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor: isDarkMode
+                ? Colors.container_dark_bg
+                : Colors.white,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.title,
+              { color: isDarkMode ? Colors.white : Colors.font_primary },
+            ]}
+          >
+            Edit Restaurant Details
+          </Text>
 
           {/* Avatar */}
           <View style={styles.profileContainer}>
-            <View style={styles.profileImageContainer}>
+            {/* <View style={styles.profileImageContainer}>
               <Image
-                source={ profileImage || require('../../assets/images/no_image_avatar.png') }
+                source={
+                  profileImage ||
+                  require('../../assets/images/no_image_avatar.png')
+                }
                 style={styles.profileImage}
                 resizeMode="cover"
               />
               <TouchableOpacity style={styles.editButton}>
                 <MaterialIcons name="create" size={18} color={Colors.white} />
               </TouchableOpacity>
-            </View>
+            </View> */}
+            <ProfileImagePicker
+              initialImage={profileInfo?.entity?.avatar}
+              onImageSelected={(base64, uri) => {
+                console.log('Picked image:', uri);
+              }}
+            />
+
           </View>
 
           {/* Form */}
           <View style={styles.formContainer}>
-            <Text style={styles.label}>First Name</Text>
+            <Text
+              style={[
+                styles.label,
+                { color: isDarkMode ? Colors.white : Colors.font_primary },
+              ]}
+            >
+              Restaurant Name
+            </Text>
             <TextInput
               style={styles.input}
-              value={firstName}
-              onChangeText={setFirstName}
+              value={entityName}
+              onChangeText={setEntityName}
             />
 
-            <Text style={styles.label}>Last Name</Text>
+            {/* <Text style={styles.label}>Last Name</Text>
             <TextInput
               style={styles.input}
               value={lastName}
               onChangeText={setLastName}
-            />
+            /> */}
           </View>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onRequestClose}>
-              <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              {
+                backgroundColor: isDarkMode
+                  ? Colors.small_container_dark_bg
+                  : '#F9F9F9',
+                borderWidth: isDarkMode ? 0 : 1,   
+                borderColor: isDarkMode ? 'transparent' : '#BDBDBD',
+              },
+            ]}
+            onPress={onRequestClose}
+          >
+            <Text
+              style={[
+                styles.buttonText,
+                { color: isDarkMode ? Colors.white : Colors.font_primary },
+              ]}
+            >
+              Cancel
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.saveButton]}
+            onPress={handleSave}
+          >
+            <Text style={[styles.buttonText, styles.saveButtonText]}>
+              Save
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}>
-              <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -114,7 +173,6 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     alignSelf: 'center',
-    backgroundColor: Colors.white,
     elevation: 10,
     shadowColor: '#000',
     shadowOffset: {
@@ -128,9 +186,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    color: Colors.font_primary,
     marginBottom: 16,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Inter-Bold',
   },
   profileContainer: {
     alignItems: 'center',
@@ -166,9 +223,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#333',
     marginBottom: 8,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Inter-Regular',
   },
   input: {
     borderWidth: 1,
@@ -178,7 +234,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 10,
     backgroundColor: '#F9F9F9',
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Inter-Regular',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -194,20 +250,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelButton: {
-    borderWidth: 1,
-    borderColor: '#BDBDBD',
-    backgroundColor: '#F9F9F9',
-  },
   saveButton: {
     backgroundColor: Colors.primary,
   },
   buttonText: {
     fontSize: 14,
-    fontFamily: 'Poppins-SemiBold',
-  },
-  cancelButtonText: {
-    color: '#666',
+    fontFamily: 'Inter-SemiBold',
   },
   saveButtonText: {
     color: Colors.white,

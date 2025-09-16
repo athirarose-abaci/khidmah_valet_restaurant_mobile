@@ -1,26 +1,58 @@
-import { Image, StatusBar, StyleSheet, Text, View, Animated, PanResponder, InteractionManager } from 'react-native';
-import React, { useRef, useState } from 'react';
+import { Image, StatusBar, StyleSheet, Text, View, Animated, PanResponder, InteractionManager, TouchableOpacity, ScrollView, } from 'react-native';
+import React, { useContext, useRef, useState } from 'react';
 import { Colors } from '../constants/customStyles';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets, } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
+import { parkingValidation } from '../apis/jobs';
+import Error from '../helpers/Error';
+import { ToastContext } from '../context/ToastContext';
 
 // row component
-const PaymentRow = ({ label, value, isTotal }) => (
+const PaymentRow = ({ label, value, isTotal, isDarkMode }) => (
   <View style={styles.paymentRow}>
-    <Text style={[styles.paymentDetailsText, isTotal && styles.totalText]}>
+    <Text style={[styles.paymentDetailsText, isTotal]}>
       {label}
     </Text>
-    <Text style={[styles.paymentDetailsValue, isTotal && styles.totalValue]}>
-      {value}
+    <Text
+      style={[
+        styles.paymentDetailsValue,
+        { color: isDarkMode ? Colors.white : '#5C5C5C' }, 
+        isTotal && styles.totalValue,
+      ]}
+    >      {value}
     </Text>
   </View>
 );
 
-const ValidatePayment = () => {
+const ValidatePayment = ({ route }) => {
+  const { validationDetails, rfid } = route.params;
+  console.log(validationDetails);
+  const insets = useSafeAreaInsets();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const toastContext = useContext(ToastContext);
+
   const navigation = useNavigation();
-  const knobWidth = 80;
-  const slideX = useRef(new Animated.Value(5)).current; 
+  const knobWidth = 68;
+  const slideX = useRef(new Animated.Value(5)).current;
   const [validated, setValidated] = useState(false);
+
+  const handleValidatePayment = async () => {
+    try {
+      const response = await parkingValidation(rfid);
+      console.log(response);
+      setValidated(true); 
+      navigation.replace('PaymentValidationSuccessfull',{parkingValidation: response});
+    } catch (error) {
+      console.log(error);
+      setValidated(false);
+      let err_msg = Error(error);
+      console.log(err_msg);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }
+  };
+  
 
   // keep track width dynamically for responsive devices
   const trackWidthRef = useRef(0);
@@ -46,62 +78,127 @@ const ValidatePayment = () => {
           if (successful) {
             setValidated(true);
             InteractionManager.runAfterInteractions(() => {
-              setTimeout(() => {
-                navigation.replace('PaymentValidationSuccessfull');
-              }, 500);
+              handleValidatePayment();
             });
           } else {
             setValidated(false);
           }
         });
       },
-    })
+    }),
   ).current;
 
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor={Colors.screen_bg} barStyle="dark-content" />
-
-      <Text style={styles.title}>Validate Payment</Text>
-
-      <MaterialIcons
-        name="chevron-left"
-        size={35}
-        color={Colors.back_arrow}
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: isDarkMode ? Colors.dark_bg : Colors.screen_bg },
+      ]}
+    >
+      <StatusBar
+        backgroundColor={isDarkMode ? Colors.dark_bg : Colors.screen_bg}
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
       />
 
-      <Text style={styles.headerText}>
-        Please confirm the vehicle details{'\n'}and payment amount{'\n'}before
-        validating.
-      </Text>
+      {/* Scrollable content */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text
+          style={[
+            styles.title,
+            { color: isDarkMode ? Colors.white : Colors.primary },
+          ]}
+        >
+          Validate Payment
+        </Text>
 
-      <View style={styles.paymentDetailsContainer}>
-        <Image
-          source={require('../assets/images/logoDark.png')}
-          style={styles.logo}
+        <MaterialIcons
+          name="chevron-left"
+          size={35}
+          color={Colors.back_arrow}
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         />
 
-        <Text style={styles.plateNoTitle}>Plate No.</Text>
-        <Text style={styles.plateNoValue}>A 31052</Text>
+        <Text style={styles.headerText}>
+          Please confirm the vehicle details{'\n'}and payment amount{'\n'}before
+          validating.
+        </Text>
 
-        <View style={styles.paymentCard}>
-          <Text style={styles.paymentCardTitle}>Payment Details</Text>
-
-          <PaymentRow label="Valet Charge" value="12.00 AED" />
-          <View style={styles.divider} />
-          <PaymentRow label="VAT" value="5.00 AED" />
-          <View style={styles.divider} />
-          <PaymentRow label="Total Amount" value="17.00 AED" isTotal />
-        </View>
-      </View>
-
-      {/* Slide to Validate */}
-      <View style={styles.sliderWrapper}>
         <View
-          style={styles.sliderTrack}
-          onLayout={e => { trackWidthRef.current = e.nativeEvent.layout.width }}
+          style={[
+            styles.paymentDetailsContainer,
+            { backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white },
+          ]}
+        >
+          <Image
+            source={
+              isDarkMode
+                ? require('../assets/images/logoLight.png')
+                : require('../assets/images/logoDark.png')
+            }
+            style={styles.logo}
+          />
+
+          <Text
+            style={[
+              styles.plateNoTitle,
+              { color: isDarkMode ? Colors.white : Colors.primary },
+            ]}
+          >
+            Plate No.
+          </Text>
+          <Text
+            style={[
+              styles.plateNoValue,
+              { color: isDarkMode ? Colors.white : Colors.primary },
+            ]}
+          >
+            {validationDetails?.vehicle?.plate_number}
+          </Text>
+
+          <View
+            style={[
+              styles.paymentCard,
+              { backgroundColor: isDarkMode ? Colors.card_dark_bg : Colors.white },
+            ]}
+          >
+          <Text style={[styles.entityName]}>
+            {/* <Text style={{ color: isDarkMode ? Colors.white : '#A0A0A0' }}>
+              Validation for{" "}
+            </Text> */}
+            <Text style={{ color: isDarkMode ? Colors.white : Colors.secondary }}>
+              {validationDetails?.entity?.name}
+            </Text>
+          </Text>
+            <Text style={[styles.paymentCardTitle, {color: isDarkMode ? Colors.white : '#A0A0A0'}]}>Payment Details</Text>
+
+            <PaymentRow label="Service Charge" value={validationDetails?.original_service_charge + ' AED'} isDarkMode={isDarkMode} />
+            <View style={styles.divider} />
+            <PaymentRow label="VAT" value={validationDetails?.tax_amount + ' AED'} isDarkMode={isDarkMode} />
+            <View style={styles.divider} />
+            <PaymentRow label="Total Amount" value={validationDetails?.total_amount + ' AED'} isTotal isDarkMode={isDarkMode} />
+            </View>
+        </View>
+      </ScrollView>
+
+      {/* Fixed Slider at Bottom */}
+      <TouchableOpacity
+        style={[
+          styles.sliderWrapper,
+          {
+            paddingBottom: insets.bottom || 10,
+            backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.screen_bg,
+          },
+        ]}
+      >
+        <View
+          style={[styles.sliderTrack,{backgroundColor: isDarkMode ? Colors.btn_dark : Colors.btn}]}
+          onLayout={e => {
+            trackWidthRef.current = e.nativeEvent.layout.width;
+          }}
         >
           {validated ? (
             <Text style={styles.validatedLabel}>Validated!!</Text>
@@ -113,17 +210,24 @@ const ValidatePayment = () => {
           )}
 
           {/* Draggable knob */}
-          <Animated.View {...panResponder.panHandlers}
-            style={[ styles.knob, {
-                transform: [{ translateX: slideX }], },]}
+          <Animated.View
+            {...panResponder.panHandlers}
+            style={[
+              styles.knob,
+              {
+                transform: [{ translateX: slideX }],
+              },
+            ]}
           >
-            <MaterialIcons name="chevron-right" size={28} color={Colors.black } />
+            <MaterialIcons
+              name="chevron-right"
+              size={28}
+              color={Colors.black}
+            />
           </Animated.View>
         </View>
-      </View>
-
-
-    </View>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 };
 
@@ -132,12 +236,13 @@ export default ValidatePayment;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.screen_bg,
+  },
+  scrollContent: {
+    paddingBottom: 120,
   },
   title: {
     fontFamily: 'Inter-Medium',
     fontSize: 20,
-    color: Colors.primary,
     textAlign: 'center',
     marginTop: 20,
   },
@@ -153,12 +258,10 @@ const styles = StyleSheet.create({
     marginVertical: 30,
   },
   paymentDetailsContainer: {
-    height: '55%',
-    backgroundColor: Colors.white,
-    borderRadius: 15,
-    marginTop: 25,
-    padding: 25,
-    marginHorizontal: 25,
+    borderRadius: 20,
+    marginTop: 20,
+    padding: 20,
+    marginHorizontal: 30,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -174,31 +277,32 @@ const styles = StyleSheet.create({
   plateNoTitle: {
     fontFamily: 'Inter-Regular',
     fontSize: 16,
-    color: Colors.primary,
     alignSelf: 'center',
-    marginTop: 40,
+    marginTop: 30,
   },
   plateNoValue: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 22,
-    color: Colors.primary,
     alignSelf: 'center',
   },
   paymentCard: {
     width: '100%',
-    height: 200,
-    backgroundColor: Colors.white,
     borderRadius: 10,
-    marginTop: 30,
-    borderWidth: 1,
-    borderColor: '#EDEDED',
+    marginTop: 20,
+    paddingBottom: 20,
   },
   paymentCardTitle: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 18,
-    color: '#5C5C5C',
-    padding: 25,
+    // padding: 25,
+    paddingHorizontal: 25,
     paddingBottom: 10,
+  },
+  entityName: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+    paddingBottom: 20,
+    textAlign: 'center',
   },
   paymentRow: {
     flexDirection: 'row',
@@ -216,9 +320,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#5C5C5C',
   },
-//   totalText: {
-//     color: Colors.primary,
-//   },
   totalValue: {
     color: '#03C5B7',
     fontSize: 18,
@@ -234,15 +335,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 25,
+    bottom: 0,
     alignItems: 'center',
+    paddingTop: 8,
   },
   sliderTrack: {
     width: '90%',
-    height: 80,
-    backgroundColor: '#313131',
-    borderRadius: 25,
+    height: 68,
+    borderRadius: 20,
     justifyContent: 'center',
+    marginBottom: 7,
   },
   sliderTrackLabelContainer: {
     position: 'absolute',
@@ -252,19 +354,19 @@ const styles = StyleSheet.create({
   },
   sliderTrackLabelRegular: {
     fontFamily: 'Inter-Regular',
-    fontSize: 18,
+    fontSize: 17,
     color: Colors.white,
   },
   sliderTrackLabelBold: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
+    fontSize: 17,
     color: Colors.white,
   },
   knob: {
     position: 'absolute',
-    left: 3,
-    width: 90,
-    height: 60,
+    left: 2,
+    width: '23%',
+    height: 56,
     borderRadius: 18,
     backgroundColor: Colors.secondary,
     alignItems: 'center',
@@ -277,7 +379,7 @@ const styles = StyleSheet.create({
   },
   validatedLabel: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
+    fontSize: 17,
     color: Colors.white,
     textAlign: 'center',
   },

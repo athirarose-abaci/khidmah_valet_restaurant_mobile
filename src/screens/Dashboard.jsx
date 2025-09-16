@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useContext } from 'react'
 import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, Dimensions, Animated } from 'react-native'
 import { Colors } from '../constants/customStyles'
 import ArrowRight from '@react-native-vector-icons/material-icons'
@@ -6,15 +6,26 @@ import { recentTransactions } from '../constants/dummyData'
 import RecentActivityCard from '../components/cards/RecentActivityCard'
 import NFCCardTapLoader from '../components/NFCCardTapLoader'
 import { useNavigation } from '@react-navigation/native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSelector } from 'react-redux'
+import { ScaledSheet, scale, verticalScale, moderateScale } from 'react-native-size-matters';
+import { parkingValidationDetails } from '../apis/jobs'
+import Error from '../helpers/Error'
+import { ToastContext } from '../context/ToastContext'
 
 const Dashboard = ({navigation}) => {
+  const insets = useSafeAreaInsets()
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const toastContext = useContext(ToastContext)
+
   const [isLoading, setIsLoading] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const [rfid, setRfid] = useState(null)
 
   const [showAll, setShowAll] = useState(false)
   const [itemHeight, setItemHeight] = useState(0)
   const windowHeight = Dimensions.get('window').height
-  const visibleArea = windowHeight * 0.55
+  const visibleArea = windowHeight * 0.50
   const maxVisible = itemHeight ? Math.max(1, Math.floor(visibleArea / itemHeight)) : 3 // fallback
 
   const buttonAnim = useRef(new Animated.Value(1)).current
@@ -32,7 +43,6 @@ const Dashboard = ({navigation}) => {
       },
     ],
   }
-
 
   const handleScroll = (e) => {
     const y = e.nativeEvent.contentOffset.y
@@ -55,34 +65,50 @@ const Dashboard = ({navigation}) => {
     }
   }, [showAll])
 
+  const validatePaymentHandler = async () => {
+    try {
+      console.log(rfid);
+      const response = await parkingValidationDetails(rfid);
+      console.log(response);
+      setIsNavigating(true);
+      navigation.navigate('ValidatePayment', { validationDetails: response, rfid: rfid });
+    } catch (error) {
+      let err_msg = Error(error);
+      console.log(err_msg);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
+      setRfid(null);
+      setIsNavigating(false);
+    }
+  }
+
     // Navigate once RFID is captured
-    useEffect(() => {
-      if (rfid && isLoading) {
-        
-        // Navigate immediately
-        navigation.navigate('ValidatePayment');
-        
-        // Dismiss loader after navigation with a longer delay
-        setTimeout(() => {
-          setIsLoading(false);
-          setRfid(null);
-        }, 300); 
-      }
-    }, [rfid, isLoading, navigation]);
+  useEffect(() => {
+    if (rfid && !isNavigating) {
+      validatePaymentHandler();
+      // Navigate immediately
+      // navigation.navigate('ValidatePayment');
+      
+      // Dismiss loader after navigation with a longer delay
+      // setTimeout(() => {
+      //   setIsLoading(false);
+      //   setRfid(null);
+      // }, 300); 
+    }
+  }, [rfid, isNavigating, navigation]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView  style={[styles.container, {backgroundColor: isDarkMode ? '#1B1E1C' : Colors.screen_bg}]}>
       <NFCCardTapLoader
         isVisible={isLoading}
         setRfid={setRfid}
         setIsLoading={setIsLoading}
-        messages={{
-          header: 'Tap the NFC Card',
-          instruction: 'Please tap the NFC card on the key to',
-          action: 'Start the Delivery Process',
-        }}
       />
-      <StatusBar backgroundColor={Colors.screen_bg} barStyle="dark-content" />
+      <StatusBar 
+        backgroundColor={isDarkMode ? Colors.black : Colors.screen_bg} 
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+      />
 
       {/* Header */}
       <View style={styles.header}>
@@ -94,10 +120,10 @@ const Dashboard = ({navigation}) => {
             source={require('../assets/images/restaurant_avatar.png')}
             style={styles.avatar}
           />
-          <Text style={styles.restaurantName}>Smoked & Co.</Text>
+          <Text style={[styles.restaurantName, {color: isDarkMode ? Colors.white : Colors.primary}]}>Smoked & Co.</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={styles.historyButton} 
+          style={[styles.historyButton, {backgroundColor: isDarkMode ? Colors.btn : Colors.black}]} 
           onPress={() => {navigation.navigate('PaymentHistory')}}
         >
           <Image
@@ -110,11 +136,20 @@ const Dashboard = ({navigation}) => {
       {/* Today's Transactions Card */}
       <View style={styles.transactionCard}>
         <View style={styles.transactionInfo}>
-          <Text style={styles.transactionCardLeftText}>
+          <Text style={styles.transactionCardLeftText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
             Valet Transactions Today
           </Text>
-          <Text style={styles.transactionValue}>
-            225.20 <Text style={styles.currency}>AED</Text>
+          <Text style={styles.transactionValue}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            225.20 <Text style={styles.currency}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            >AED</Text>
           </Text>
         </View>
 
@@ -143,7 +178,7 @@ const Dashboard = ({navigation}) => {
       </View>
 
       {/* Transactions List */}
-      <View style={[styles.transactionsList, showAll && { flex: 1 }] }>
+      <View style={[styles.transactionsList, {backgroundColor: isDarkMode ? Colors.container_dark_bg : '#EBECF0'}, showAll && { flex: 1 }] }>
         <FlatList
           ref={flatListRef}
           data={recentTransactions}
@@ -167,18 +202,23 @@ const Dashboard = ({navigation}) => {
       </View>
 
       {/* Validate Payment Button */}
-      <Animated.View style={[styles.buttonContainer, animatedButtonStyle]}>
+      <Animated.View style={[
+        styles.buttonContainer, 
+        { paddingBottom: insets.bottom || 12, backgroundColor: isDarkMode ? '#262626' : Colors.white },
+        animatedButtonStyle
+        ]}>
         <TouchableOpacity
-          style={styles.validateButton}
+          style={[styles.validateButton, {backgroundColor: isDarkMode ? Colors.primary : Colors.btn}]}
           onPress={() => {
             setRfid(null)
             setIsLoading(true)
+            setIsNavigating(false)
           }}
         >
-          <Text style={styles.validateButtonText}>Validate Payment</Text>
+          <Text style={[styles.validateButtonText, {color: isDarkMode ? Colors.white : Colors.white}]}>Validate Payment</Text>
         </TouchableOpacity>
       </Animated.View>
-    </View>
+    </SafeAreaView>
   )
 }
 
@@ -187,8 +227,7 @@ export default Dashboard
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.screen_bg,
-    padding: 10,
+    padding: 2
   },
 
   /** Header */
@@ -197,7 +236,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 15,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
   },
   restaurantWrapper: {
     flexDirection: 'row',
@@ -213,13 +252,11 @@ const styles = StyleSheet.create({
   restaurantName: {
     fontFamily: 'Inter-Medium',
     fontSize: 18,
-    color: Colors.primary,
   },
   historyButton: {
     width: 45,
     height: 45,
     borderRadius: 25,
-    backgroundColor: Colors.black,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -250,12 +287,12 @@ const styles = StyleSheet.create({
   },
   transactionValue: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 35,
+    fontSize: 30,
     color: Colors.white,
   },
   currency: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 25,
+    fontSize: 20,
     color: Colors.white,
   },
 
@@ -274,12 +311,12 @@ const styles = StyleSheet.create({
   },
   carFillIcon: {
     marginTop: 4,
-    width: 30,
-    height: 30,
+    width: 25,
+    height: 25,
   },
   carFillIconText: {
     fontFamily: 'Inter-Regular',
-    fontSize: 35,
+    fontSize: 30,
     color: Colors.secondary,
     marginLeft: 4,
   },
@@ -296,13 +333,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 20,
     marginHorizontal: 15,
+    marginVertical: 13,
   },
   recentTransactionsText: {
     marginLeft: 15,
     fontFamily: 'Inter-SemiBold',
-    fontSize: 20,
+    fontSize: 15,
     color: '#6E6E6E',
   },
   viewAllButton: {
@@ -311,31 +348,29 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontFamily: 'Inter-Regular',
-    fontSize: 16,
+    fontSize: 13,
     color: '#909090',
   },
   /** Transactions List */
   transactionsList: {
     marginTop: 10,
-    marginHorizontal: 15,
-    backgroundColor: '#EBECF0',
+    marginHorizontal: 18,
     borderRadius: 25,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 18, 
+    paddingHorizontal: 15,
   },
   buttonContainer: {
-    position: 'absolute',
+    position: 'absolute', 
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: Colors.white,
     paddingVertical: 12,
     paddingHorizontal: 25,
+    marginVertical: 10 ,
   },
   validateButton: {
     height: 65,
-    backgroundColor: '#313131',
-    borderRadius: 25,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -346,7 +381,7 @@ const styles = StyleSheet.create({
   },
   validateButtonText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
+    fontSize: 17,
     color: Colors.white,
   }
 })
