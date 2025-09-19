@@ -4,10 +4,12 @@ import { Colors } from '../constants/customStyles';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets, } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { parkingValidation } from '../apis/jobs';
 import Error from '../helpers/Error';
 import { ToastContext } from '../context/ToastContext';
+import { setEntityValidationDetails } from '../../store/jobSlice';
+import AbaciLoader from '../components/AbaciLoader';
 
 // row component
 const PaymentRow = ({ label, value, isTotal, isDarkMode }) => (
@@ -28,32 +30,43 @@ const PaymentRow = ({ label, value, isTotal, isDarkMode }) => (
 
 const ValidatePayment = ({ route }) => {
   const { validationDetails, rfid } = route.params;
-  console.log(validationDetails);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [validated, setValidated] = useState(false);
+  
+  const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const toastContext = useContext(ToastContext);
 
-  const navigation = useNavigation();
   const knobWidth = 68;
   const slideX = useRef(new Animated.Value(5)).current;
-  const [validated, setValidated] = useState(false);
 
   const handleValidatePayment = async () => {
+    setIsLoading(true);
+    setValidated(true); 
     try {
       const response = await parkingValidation(rfid);
-      console.log(response);
-      setValidated(true); 
-      navigation.replace('PaymentValidationSuccessfull',{parkingValidation: response});
+      console.log('response', response);
+      console.log('response', response.status);
+      dispatch(setEntityValidationDetails(response.data));
+      console.log('response', response.data);
+      console.log('response', response.status);
+      if (response.status === 201) {
+        navigation.navigate('PaymentValidationSuccessfull', { validationDetails: response.data });
+      }    
     } catch (error) {
-      console.log(error);
-      setValidated(false);
+      console.log('error', error);
       let err_msg = Error(error);
-      console.log(err_msg);
-      toastContext.showToast(err_msg, 'short', 'error');
+      console.log('err_msg', err_msg);
+      toastContext.showToast(err_msg, 'long', 'error');
+    }finally{
+      setValidated(false);
+      setIsLoading(false);
     }
   };
   
-
   // keep track width dynamically for responsive devices
   const trackWidthRef = useRef(0);
   const panResponder = useRef(
@@ -99,7 +112,7 @@ const ValidatePayment = ({ route }) => {
         backgroundColor={isDarkMode ? Colors.dark_bg : Colors.screen_bg}
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
       />
-
+      <AbaciLoader visible={isLoading} />
       {/* Scrollable content */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -215,15 +228,12 @@ const ValidatePayment = ({ route }) => {
             style={[
               styles.knob,
               {
+                width: knobWidth,
                 transform: [{ translateX: slideX }],
               },
             ]}
           >
-            <MaterialIcons
-              name="chevron-right"
-              size={28}
-              color={Colors.black}
-            />
+            <MaterialIcons name="chevron-right" size={28} color={Colors.black} />
           </Animated.View>
         </View>
       </TouchableOpacity>
@@ -365,7 +375,7 @@ const styles = StyleSheet.create({
   knob: {
     position: 'absolute',
     left: 2,
-    width: '23%',
+    // width: '23%',
     height: 56,
     borderRadius: 18,
     backgroundColor: Colors.secondary,

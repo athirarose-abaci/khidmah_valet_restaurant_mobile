@@ -1,5 +1,21 @@
 import { authAxios, publicAxios } from "../context/AxiosContext";
 
+//*********************// SYSTEM STATUS //*********************//
+export const checkSystemStatus = async () => {
+    try {
+      const response = await publicAxios.get('system/status/');
+      return {
+        success: response.data.status === 'success',
+        adminUsersExist: response.data.details?.admin_users_exist || false,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        adminUsersExist: false,
+      };
+    }
+  };
+
  //************ USER LOGIN ************ //
  export const userLogin = async(email, password)=>{
     const payload = {
@@ -33,11 +49,25 @@ export const resetPassword = async(username, current_password, new_password)=>{
 //************ FORGOT PASSWORD ************ //
 
 
+
+
+
+//************ CHANGE PASSWORD ************ //
+export const changePassword = async (payload) => {
+
+    console.log('changePasswordPayload', payload);
+    try {
+      const response = await authAxios.post('users/reset-password/', payload);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
 //************ USER PROFILE ************ //
 export const userProfile = async() => {
     try{
         const response = await authAxios.get('users/profile/');
-        console.log('userProfileResponse',response)
         return response.data;
     }catch(error){
         throw error;
@@ -45,10 +75,11 @@ export const userProfile = async() => {
 }
 
 //************ UPDATE PROFILE ************ //
-const updateProfile = async (payload) => {
+export const updateUserProfile = async (payload) => {
     try{
         const response = await authAxios.patch('users/profile/',payload);
-        return response.data;
+        console.log('updateUserProfileResponse',response)
+        return response;
     }catch(error){
         throw error;
     }
@@ -59,6 +90,7 @@ const updateProfile = async (payload) => {
 export const logoutUser = async () => {
     try {
       const response = await authAxios.post('users/logout/');
+      console.log('logoutUserResponse',response)
       return response.data;
     } catch (error) {
       throw error;

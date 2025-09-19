@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Switch, StatusBar, ImageBackground } from 'react-native';
-import { ScaledSheet, scale, verticalScale, moderateScale } from 'react-native-size-matters';
+import { View, Text, ScrollView, Image, TouchableOpacity, Switch, StatusBar, ImageBackground } from 'react-native';
+import { ScaledSheet, scale, moderateScale } from 'react-native-size-matters';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useContext, useEffect, useState } from 'react';
 import { AntDesign } from '@react-native-vector-icons/ant-design';
@@ -7,7 +7,6 @@ import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../constants/customStyles';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import EditProfileModal from '../components/modals/EditProfileModal';
 import ChangePasswordModal from '../components/modals/ChangePasswordModal';
 import ConfirmationModal from '../components/modals/ConfirmationModal'; 
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,18 +18,20 @@ import { clearCookies } from '../helpers/clearCookieHelper';
 import { ToastContext } from '../context/ToastContext';
 import Error from '../helpers/Error';
 
+
 const Profile = ({}) => {
   const navigation = useNavigation();
   const [isLoading,setIsLoading] = useState(false)
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isChangePasswordModalVisible, setIsChangePasswordModalVisible] = useState(false);
   const [isLogoutConfirmVisible, setIsLogoutConfirmVisible] = useState(false);
+
   const [profileInfo, setProfileInfo] = useState(null);
 
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
   const isDarkMode = useSelector(state => state.themeSlice?.isDarkMode);
   const toastContext = useContext(ToastContext);
+  const currentAuthState = useSelector(state => state.authSlice.authState);
 
   useEffect(() => {
     profileData();
@@ -40,7 +41,6 @@ const Profile = ({}) => {
     setIsLoading(true);
     try {
       const response = await userProfile();
-      console.log('profileData', response);
       setProfileInfo(response);
     } catch (error) {
       let err_msg = Error(error);
@@ -98,18 +98,26 @@ const Profile = ({}) => {
           
           <View style={styles.profileContainer}>
             <View style={styles.profileImageContainer}>
-              <Image
-                source={require('../assets/images/no_image_avatar.png')}
-                style={styles.profileImage}
-                resizeMode="cover"
-              />
+            <Image
+              source={
+                currentAuthState?.entity?.entity_logo 
+                ? {uri: currentAuthState?.entity?.entity_logo}
+                : require('../assets/images/restaurant_avatar.png')
+              }
+              style={styles.profileImage}
+              resizeMode="cover"
+            />
+
+              {/* <TouchableOpacity style={styles.editButton}>
+                <Image
+                  source={require('../assets/images/edit-outline.png')}
+                  style={{ width: 18, height: 18, tintColor: Colors.white }}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity> */}
             </View>
             
             <Text style={styles.userName}>{profileInfo?.entity?.name}</Text>
-        {/*             
-            <View style={styles.driverIdContainer}>
-              <Text style={styles.driverIdText}>Driver ID</Text>
-            </View> */}
           </View>
         </View>
 
@@ -148,22 +156,6 @@ const Profile = ({}) => {
             <View>
               <Text style={[styles.profileText,{color: isDarkMode ? '#4FB7C5' : Colors.black}]}>PROFILE</Text>
             </View>
-
-            <TouchableOpacity style={styles.settingItem} onPress={() => setIsEditModalVisible(true)}>
-              <View style={styles.settingLeft}>
-                <View style={styles.iconContainer}>
-                  <Image
-                    source={require('../assets/images/profile.png')}
-                    style={styles.settingIcon}
-                    resizeMode="contain"
-                  />
-                </View>
-                <Text style={[styles.settingText, {color: isDarkMode ? Colors.white : Colors.font_primary}]}>
-                  Edit Restaurant Details
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.icon_primary} />
-            </TouchableOpacity>
 
             <TouchableOpacity style={styles.settingItem} 
               onPress={() => setIsChangePasswordModalVisible(true)}
@@ -205,15 +197,6 @@ const Profile = ({}) => {
           </ScrollView>
         </View>
       </View>
-      <EditProfileModal
-        isVisible={isEditModalVisible}
-        onRequestClose={() => setIsEditModalVisible(false)}
-        profileInfo={profileInfo}
-        onProfileUpdate={updatedInfo => {
-          setProfileInfo(updatedInfo);
-          setIsEditModalVisible(false);
-        }}
-      />
       <ChangePasswordModal
         isVisible={isChangePasswordModalVisible}
         onRequestClose={() => setIsChangePasswordModalVisible(false)}
@@ -294,6 +277,19 @@ const styles = ScaledSheet.create({
     borderWidth: scale(4),
     borderColor: '#D9D9D9',
     elevation: 5,
+  },
+    editButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
   },
   userName: {
     fontSize: moderateScale(23),

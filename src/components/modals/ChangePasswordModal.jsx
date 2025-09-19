@@ -1,37 +1,82 @@
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, StatusBar, } from 'react-native';
-import React, { useState } from 'react';
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, } from 'react-native';
+import React, { useContext, useState } from 'react';
 import { ScaledSheet, scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../../constants/customStyles';
 import { useSelector } from 'react-redux';
+import { ToastContext } from '../../context/ToastContext';
+import Error from '../../helpers/Error';
+import { changePassword } from '../../apis/authentication';
 
 const { width, height } = Dimensions.get('window');
 
-const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
+// Added optional onPasswordChange callback (defaults to no-op) and refactored clearing logic
+const ChangePasswordModal = ({ isVisible, onRequestClose, onPasswordChange = () => {} }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  
+  const toastContext = useContext(ToastContext);
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
-  const handleSave = () => {
-    // Add your validation logic here
-    console.log('Save password changes');
-    // Clear form and close modal
-    handleCancel();
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const payload = {
+        current_password: currentPassword,
+        new_password: newPassword,
+      }
+      if(currentPassword === newPassword){
+        toastContext.showToast( 'New password cannot be the same as the current password', 'short', 'error', );
+        setIsLoading(false);
+        clearInputs();
+        onRequestClose();
+        return;
+      }
+      if(newPassword !== confirmPassword){
+        toastContext.showToast( 'Passwords do not match', 'short', 'error');
+        setIsLoading(false);
+        clearInputs();
+        onRequestClose();
+        return;
+      }
+      const response = await changePassword(payload);
+      if(response?.status === 200){
+        clearInputs();
+        onPasswordChange(true);
+        toastContext.showToast( 'Password changed successfully', 'short', 'success', );
+        clearInputs();
+        onRequestClose();
+      }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+      onPasswordChange(false);
+      clearInputs();
+      onRequestClose();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearInputs = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    // reset eye toggle states
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
   };
 
   const handleCancel = () => {
     // Clear form
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowCurrentPassword(false);
-    setShowNewPassword(false);
-    setShowConfirmPassword(false);
+    clearInputs();
     onRequestClose();
   };
 
@@ -41,9 +86,17 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
       transparent={true}
       animationType="fade"
       onRequestClose={handleCancel}
-      statusBarTranslucent={true}>
+      statusBarTranslucent={false}
+      presentationStyle="overFullScreen"
+      >
       <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={[ styles.modalContent, { backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white,},]} >          
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={[styles.title,{ color: isDarkMode ? Colors.white : Colors.font_primary },]}>Change Password</Text>
           <View style={styles.formContainer}>
             {/* Current Password */}
@@ -123,7 +176,9 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
                 borderColor: isDarkMode ? 'transparent' : '#E0E0E0',
               },
             ]}
-            onPress={handleCancel}>
+            onPress={handleCancel}
+            disabled={isLoading}
+            >
             <Text
               style={[
                 styles.buttonText,
@@ -134,15 +189,24 @@ const ChangePasswordModal = ({ isVisible, onRequestClose }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.saveButton]}
-            onPress={handleSave}>
+            onPress={handleSave}
+            disabled={isLoading}
+            >
+            {isLoading ? (
+              <ActivityIndicator size='small' color={Colors.white} />
+            ) : (
+
             <Text style={[styles.buttonText, styles.saveButtonText]}>
               Save
             </Text>
+            )}
           </TouchableOpacity>
 
           </View>
+          </ScrollView>
         </View>
-      </View>
+        </KeyboardAvoidingView>
+        </View>
     </Modal>
   );
 };

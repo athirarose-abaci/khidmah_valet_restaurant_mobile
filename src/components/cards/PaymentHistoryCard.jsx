@@ -1,23 +1,22 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image } from 'react-native';
 import React from 'react';
 import { Colors } from '../../constants/customStyles';
 import { useSelector } from 'react-redux';
 
-const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index, isCollapsed, onHeaderPress }) => {
+const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index }) => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   return (
     <View style={[styles.mainContainer, {backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white}]}>
       {showHeader && (
-        <TouchableOpacity 
+        <View 
           style={[styles.headerContainer, {backgroundColor: isDarkMode ? '#313131' : '#F9F9F9'}]}
-          onPress={onHeaderPress}
         >
           <Text style={styles.headerDate}>{date}</Text>
           <Text style={styles.headerCount}>
-            {`${totalCount} Transactions ${isCollapsed ? '▼' : '▲'}`}
+            {`${totalCount} Transactions`}
           </Text>
-        </TouchableOpacity>
+        </View>
       )}
 
       {item && (

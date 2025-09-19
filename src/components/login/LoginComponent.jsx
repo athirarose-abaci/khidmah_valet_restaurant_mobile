@@ -4,12 +4,21 @@ import { useDispatch, useSelector } from 'react-redux';
 import { userLogin } from '../../apis/authentication';
 import { setAuthState, setLoginCredentials } from '../../../store/authSlice';
 import { storeData } from '../../helpers/asyncStorageHelper';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import CookieManager from '@react-native-cookies/cookies';
 import Error from '../../helpers/Error';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
 import { Colors } from '../../constants/customStyles';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const LoginComponent = ({ setCurrentScreen }) => {
   const [userEmail, setUserEmail] = useState(null);
@@ -22,70 +31,73 @@ const LoginComponent = ({ setCurrentScreen }) => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 
   const handleLogin = async () => {
-    setIsLoading(true);
-    if (!userEmail || userEmail.length === 0) {
-      toastContext.showToast( 'Please enter a valid email address', 'short', 'error', );
-    } else if (password.length === 0) {
+    if (!userEmail || userEmail.trim().length === 0) {
+      toastContext.showToast('Please enter a valid email address', 'short', 'error');
+      return;
+    }
+
+    if (!password || password.trim().length === 0) {
       toastContext.showToast('Please enter a valid password', 'short', 'error');
-    } else {
-      try {
-        const userData = await userLogin(userEmail, password);
-        console.log('userData', userData);
-        if (userData?.password_reset_required) {
-          const loginData = {
-            username: userEmail,
-            current_password: password,
-            first_name: userData?.user?.first_name,
-          };
-          dispatch(setLoginCredentials(loginData));
-          setCurrentScreen('resetPassword');
-        } else {
-          const authData = { ...userData?.user, authenticated: true };
-          dispatch(setAuthState(authData));
-          await storeData('data', JSON.stringify(authData));
-          // dispatch(setSelectedParkingArea(loginData?.user?.parking_areas[0]))
-          if (Platform.OS === 'ios') {
-            CookieManager.get(BASE_URL)
-              .then(cookie => {
-                storeData('cookie', JSON.stringify(cookie));
-              })
-              .catch(err => {
-                // Pass
-              });
-          }
-        }
-      } catch (error) {
-        console.log('catch error', error);
-        setPassword(null);
-        let err_msg = Error(error);
-        console.log('err_msg', err_msg);
-        toastContext.showToast(err_msg, 'short', 'error');
-      } finally {
-        setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const userData = await userLogin(userEmail, password);
+      if (userData?.password_reset_required) {
+        const loginData = {
+          username: userEmail,
+          current_password: password,
+          first_name: userData?.user?.first_name,
+        };
+        dispatch(setLoginCredentials(loginData));
+        setCurrentScreen('resetPassword');
+      } else {
+        const authData = { ...userData?.user, authenticated: true };
+        dispatch(setAuthState(authData));
+        await storeData('data', JSON.stringify(authData));
       }
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardAwareScrollView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+      contentContainerStyle={{ flexGrow: 1 }}
+      enableOnAndroid={true}
+      extraScrollHeight={60}     
+      showsVerticalScrollIndicator={false} 
+      keyboardShouldPersistTaps="handled"
     >
-    <ScrollView style={{ flex: 1 }} 
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled" 
-      keyboardDismissMode='on-drag'
-    >
-      <Text style={[styles.title, {color: isDarkMode ? Colors.white : Colors.primary}]}>Sign in</Text>
+      <Text style={[styles.title, { color: isDarkMode ? Colors.white : Colors.primary }]}>
+        Sign in
+      </Text>
+
+      {/* Email Field */}
       <View style={styles.field_container}>
-        <Text style={[styles.label, {color: isDarkMode ? '#D3D3D3' : Colors.primary}]}>Email Address</Text>
-        <View style={[
-            styles.input_container, 
-            {backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
-            borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border
-          }]}>
-          <View style={[styles.icon_container, {borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA'}]}>
+        <Text style={[styles.label, { color: isDarkMode ? '#D3D3D3' : Colors.primary }]}>
+          Email Address
+        </Text>
+        <View
+          style={[
+            styles.input_container,
+            {
+              backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
+              borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.icon_container,
+              { borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA' },
+            ]}
+          >
             <Image
               source={require('../../assets/images/email.png')}
               style={styles.icon}
@@ -95,7 +107,9 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <TextInput
             style={styles.input}
             placeholder="emailaddress@domain.com"
-            placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
+            placeholderTextColor={
+              isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder
+            }
             value={userEmail}
             onChangeText={text => setUserEmail(text)}
             keyboardType="email-address"
@@ -103,14 +117,27 @@ const LoginComponent = ({ setCurrentScreen }) => {
           />
         </View>
       </View>
+
+      {/* Password Field */}
       <View style={[styles.field_container, { marginTop: 5 }]}>
-        <Text style={[styles.label, {color: isDarkMode ? '#D3D3D3' : Colors.primary}]}>Password</Text>
-        <View style={[
-            styles.input_container, 
-            {backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
-            borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border
-          }]}>
-          <View style={[styles.icon_container, {borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA'}]}>
+        <Text style={[styles.label, { color: isDarkMode ? '#D3D3D3' : Colors.primary }]}>
+          Password
+        </Text>
+        <View
+          style={[
+            styles.input_container,
+            {
+              backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
+              borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.icon_container,
+              { borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA' },
+            ]}
+          >
             <Image
               source={require('../../assets/images/password.png')}
               style={styles.icon}
@@ -120,36 +147,47 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <TextInput
             style={[styles.input, { width: '73%' }]}
             placeholder="**************"
-            placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
+            placeholderTextColor={
+              isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder
+            }
             value={password}
             onChangeText={text => setPassword(text)}
             secureTextEntry={!showPassword}
           />
-          <View style={[styles.eye_icon_container, {borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA'}]}>
+          <TouchableOpacity
+            style={styles.eye_icon_container}
+            onPress={() => {
+              setShowPassword(!showPassword);
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons
-              name={!showPassword?"eye-outline":"eye-off-outline"}
+              name={!showPassword ? 'eye-outline' : 'eye-off-outline'}
               color={isDarkMode ? '#D3D3D3' : Colors.black}
               size={20}
-              onPress={() => {
-                setShowPassword(!showPassword);
-              }}
             />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Sign In Button */}
       <TouchableOpacity
         style={styles.button}
         onPress={handleLogin}
         disabled={isLoading}
-        // onPress={() => {
-        //   setCurrentScreen('ResetPassword');
-        // }}
       >
         {isLoading ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <>
-            <Text style={[styles.button_label, {color: isDarkMode ? '#F5F5F5' : Colors.white}]}>Sign In</Text>
+            <Text
+              style={[
+                styles.button_label,
+                { color: isDarkMode ? '#F5F5F5' : Colors.white },
+              ]}
+            >
+              Sign In
+            </Text>
             <MaterialIcons
               name="login"
               color={isDarkMode ? '#F5F5F5' : Colors.white}
@@ -160,18 +198,14 @@ const LoginComponent = ({ setCurrentScreen }) => {
         )}
       </TouchableOpacity>
 
+      {/* Forgot Password */}
       <TouchableOpacity
         style={styles.fgp_container}
         onPress={() => setCurrentScreen('forgotPassword')}
       >
-        <Text
-          style={styles.forgot_password}
-        >
-          Forgot Password ?
-        </Text>
+        <Text style={styles.forgot_password}>Forgot Password ?</Text>
       </TouchableOpacity>
-    </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   );
 };
 
@@ -210,11 +244,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   eye_icon_container: {
-    width: '12%', 
+    width: '12%',
     height: '85%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingRight: 25,   
+    paddingRight: 25,
   },
   icon: {
     width: 20,
@@ -227,9 +261,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingRight: 20,
     color: '#62808A',
-    fontFamily:'Poppins-Regular',
-    fontSize:15,
-    textAlign:'justify'
+    fontFamily: 'Poppins-Regular',
+    fontSize: 15,
+    textAlign: 'justify',
   },
   button: {
     width: '70%',

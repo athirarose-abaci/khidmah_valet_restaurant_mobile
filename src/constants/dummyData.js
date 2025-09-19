@@ -53,7 +53,5 @@ export const paymentHistoryData = [
       { id: '15', plate: 'A 34893', amount: '10.50', time: '9:00 PM', image: require('../assets/images/car_avatar.png') },
       { id: '16', plate: 'A 34893', amount: '10.50', time: '8:00 PM', image: require('../assets/images/car_avatar.png') },
     ],
-  },
-
-  
+  }, 
 ];

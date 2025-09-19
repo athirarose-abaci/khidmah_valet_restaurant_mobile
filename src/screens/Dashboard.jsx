@@ -2,91 +2,149 @@ import React, { useState, useRef, useEffect, useContext } from 'react'
 import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, Dimensions, Animated } from 'react-native'
 import { Colors } from '../constants/customStyles'
 import ArrowRight from '@react-native-vector-icons/material-icons'
-import { recentTransactions } from '../constants/dummyData'
 import RecentActivityCard from '../components/cards/RecentActivityCard'
 import NFCCardTapLoader from '../components/NFCCardTapLoader'
-import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useSelector } from 'react-redux'
-import { ScaledSheet, scale, verticalScale, moderateScale } from 'react-native-size-matters';
+import { useDispatch, useSelector } from 'react-redux'
 import { parkingValidationDetails } from '../apis/jobs'
 import Error from '../helpers/Error'
 import { ToastContext } from '../context/ToastContext'
+import { setEntityDetails } from '../../store/jobSlice'
+import { transactionHistory, transactionSummary } from '../apis/entities'
+import { useIsFocused } from '@react-navigation/native'
+import moment from 'moment'
+import transformPaymentHistory from '../utility/PaymentHistoryFormat'
+import transformRecentActivity from '../utility/RecentActivityFormat'
+import { clearPaymentHistory, formattedPaymentHistory, formattedRecentActivity, setPaymentHistory } from '../../store/entitySlice'
+import AbaciLoader from '../components/AbaciLoader'
 
 const Dashboard = ({navigation}) => {
   const insets = useSafeAreaInsets()
-  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  const toastContext = useContext(ToastContext)
+  const isFocused = useIsFocused();
+  const [isNFCLoading, setIsNFCLoading] = useState(false)
+  const [isDataLoading, setIsDataLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
-  const [isLoading, setIsLoading] = useState(false)
+  const dispatch = useDispatch();
+  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const toastContext = useContext(ToastContext);
+  const currentAuthState = useSelector(state => state.authSlice.authState);
+  const entityId = currentAuthState?.entity?.id;
+  const paymentHistoryData = useSelector(state => state.entitySlice.formattedRecentActivity);
+  const flatListRef = useRef(null)
+
   const [isNavigating, setIsNavigating] = useState(false)
   const [rfid, setRfid] = useState(null)
 
-  const [showAll, setShowAll] = useState(false)
+  const todayStart = moment().format('YYYY-MM-DD');  
+  const todayEnd = moment().add(1, 'day').format('YYYY-MM-DD'); 
+  const [transactionSummaryData, setTransactionSummaryData] = useState(null);
+
+  // const [showAll, setShowAll] = useState(false)
   const [itemHeight, setItemHeight] = useState(0)
   const windowHeight = Dimensions.get('window').height
   const visibleArea = windowHeight * 0.50
   const maxVisible = itemHeight ? Math.max(1, Math.floor(visibleArea / itemHeight)) : 3 // fallback
 
-  const buttonAnim = useRef(new Animated.Value(1)).current
-  const lastOffset = useRef(0)
-  const flatListRef = useRef(null)
+  // const buttonAnim = useRef(new Animated.Value(1)).current
+  // const lastOffset = useRef(0)
 
-  const animatedButtonStyle = {
-    opacity: buttonAnim,
-    transform: [
-      {
-        translateY: buttonAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [50, 0],
-        }),
-      },
-    ],
-  }
+  // const animatedButtonStyle = {
+  //   opacity: buttonAnim,
+  //   transform: [
+  //     {
+  //       translateY: buttonAnim.interpolate({
+  //         inputRange: [0, 1],
+  //         outputRange: [50, 0],
+  //       }),
+  //     },
+  //   ],
+  // }
 
-  const handleScroll = (e) => {
-    const y = e.nativeEvent.contentOffset.y
-    const diff = y - lastOffset.current
-    if (diff > 5) {
-      // scrolling down -> hide
-      Animated.timing(buttonAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start()
-    } else if (diff < -5) {
-      // scrolling up -> show
-      Animated.timing(buttonAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start()
-    }
-    lastOffset.current = y
-  }
+  // const handleScroll = (e) => {
+  //   const y = e.nativeEvent.contentOffset.y
+  //   const diff = y - lastOffset.current
+  //   if (diff > 5) {
+  //     // scrolling down -> hide
+  //     Animated.timing(buttonAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start()
+  //   } else if (diff < -5) {
+  //     // scrolling up -> show
+  //     Animated.timing(buttonAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start()
+  //   }
+  //   lastOffset.current = y
+  // }
+
+  // useEffect(() => {
+  //   Animated.timing(buttonAnim, { toValue: showAll ? 0 : 1, duration: 200, useNativeDriver: true }).start()
+  //   if (!showAll && flatListRef.current) {
+  //     flatListRef.current.scrollToOffset({ offset: 0, animated: false })
+  //     lastOffset.current = 0
+  //   }
+  // }, [showAll])
 
   useEffect(() => {
-    Animated.timing(buttonAnim, { toValue: showAll ? 0 : 1, duration: 200, useNativeDriver: true }).start()
-    if (!showAll && flatListRef.current) {
-      flatListRef.current.scrollToOffset({ offset: 0, animated: false })
-      lastOffset.current = 0
-    }
-  }, [showAll])
+      fetchTransactionSummary();
+      dispatch(clearPaymentHistory());
+      paymentHistory(entityId, 1, '', 10);
+  }, [isFocused]);
 
-  const validatePaymentHandler = async () => {
+  const parkingValidationDetailsHandler = async () => {
+    setIsDataLoading(true);
+    setRefreshing(true);
+    setIsNavigating(true);
     try {
-      console.log(rfid);
       const response = await parkingValidationDetails(rfid);
-      console.log(response);
-      setIsNavigating(true);
+      dispatch(setEntityDetails(response));
       navigation.navigate('ValidatePayment', { validationDetails: response, rfid: rfid });
     } catch (error) {
       let err_msg = Error(error);
-      console.log(err_msg);
-      toastContext.showToast(err_msg, 'short', 'error');
+      toastContext.showToast(err_msg, 'long', 'error');
     } finally {
-      setIsLoading(false);
       setRfid(null);
+      setIsDataLoading(false);
+      setIsNFCLoading(false);
+      setRefreshing(false);
       setIsNavigating(false);
     }
   }
 
-    // Navigate once RFID is captured
+  const paymentHistory = async (entityId, pageNumber, searchQuery, limit) => {
+    setIsDataLoading(true);
+    setRefreshing(true);
+    try{
+      const response = await transactionHistory(entityId, pageNumber, searchQuery, limit);
+      const transformePaymentHistoryData = transformPaymentHistory(response?.results);
+      const transformedRecentActivity = transformRecentActivity(response?.results);
+      dispatch(setPaymentHistory(response));
+      dispatch(formattedPaymentHistory(transformePaymentHistoryData));
+      dispatch(formattedRecentActivity(transformedRecentActivity));
+    }catch(error){
+      let error_msg = Error(error);
+      toastContext.showToast(error_msg,'short','error');
+    }finally{
+      setIsDataLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  const fetchTransactionSummary = async () => {
+    setIsDataLoading(true);
+    setRefreshing(true);
+    try {
+      const response = await transactionSummary(entityId, todayStart, todayEnd);
+      setTransactionSummaryData(response);
+    } catch (error) {
+      let err_msg = Error(error);
+      toastContext.showToast(err_msg, 'short', 'error');
+    }finally{
+      setIsDataLoading(false);
+      setRefreshing(false);
+    }
+  }
+  // Navigate once RFID is captured
   useEffect(() => {
     if (rfid && !isNavigating) {
-      validatePaymentHandler();
+      parkingValidationDetailsHandler();
       // Navigate immediately
       // navigation.navigate('ValidatePayment');
       
@@ -98,17 +156,25 @@ const Dashboard = ({navigation}) => {
     }
   }, [rfid, isNavigating, navigation]);
 
+  const refreshControl = () => {
+    fetchTransactionSummary();
+    dispatch(clearPaymentHistory());
+    paymentHistory(entityId, 1, '', 10);
+  }
+
   return (
     <SafeAreaView  style={[styles.container, {backgroundColor: isDarkMode ? '#1B1E1C' : Colors.screen_bg}]}>
       <NFCCardTapLoader
-        isVisible={isLoading}
+        isVisible={isNFCLoading}
         setRfid={setRfid}
-        setIsLoading={setIsLoading}
+        setIsLoading={setIsNFCLoading}
       />
       <StatusBar 
         backgroundColor={isDarkMode ? Colors.black : Colors.screen_bg} 
         barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
       />
+
+      <AbaciLoader visible={isDataLoading} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -117,7 +183,11 @@ const Dashboard = ({navigation}) => {
           onPress={() => {navigation.navigate('Profile')}}
         >
           <Image
-            source={require('../assets/images/restaurant_avatar.png')}
+            source={
+              currentAuthState?.entity?.entity_logo 
+              ? {uri: currentAuthState?.entity?.entity_logo}
+              : require('../assets/images/restaurant_avatar.png')
+            }
             style={styles.avatar}
           />
           <Text style={[styles.restaurantName, {color: isDarkMode ? Colors.white : Colors.primary}]}>Smoked & Co.</Text>
@@ -146,7 +216,7 @@ const Dashboard = ({navigation}) => {
             numberOfLines={1}
             adjustsFontSizeToFit
           >
-            225.20 <Text style={styles.currency}
+            {transactionSummaryData?.total_amount} <Text style={styles.currency}
             numberOfLines={1}
             adjustsFontSizeToFit
             >AED</Text>
@@ -160,7 +230,7 @@ const Dashboard = ({navigation}) => {
               source={require('../assets/images/car_fill.png')}
               style={styles.carFillIcon}
             />
-            <Text style={styles.carFillIconText}>24</Text>
+            <Text style={styles.carFillIconText}>{transactionSummaryData?.total_count}</Text>
           </View>
           <Text style={styles.paymentsCompletedText}>
             Payments {'\n'}Completed
@@ -171,17 +241,17 @@ const Dashboard = ({navigation}) => {
       {/* Recent Transactions */}
       <View style={styles.recentTransactions}>
         <Text style={styles.recentTransactionsText}>Recent Activity</Text>
-        <TouchableOpacity style={styles.viewAllButton} onPress={() => setShowAll(!showAll)}>
+        {/* <TouchableOpacity style={styles.viewAllButton} onPress={() => setShowAll(!showAll)}>
           <Text style={styles.viewAllText}>{showAll ? 'View Less' : 'View All'}</Text>
           <ArrowRight name="keyboard-arrow-right" size={20} color='#909090' />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Transactions List */}
-      <View style={[styles.transactionsList, {backgroundColor: isDarkMode ? Colors.container_dark_bg : '#EBECF0'}, showAll && { flex: 1 }] }>
+      {/* <View style={[styles.transactionsList, {backgroundColor: isDarkMode ? Colors.container_dark_bg : '#EBECF0'}, showAll && { flex: 1 }] }>
         <FlatList
           ref={flatListRef}
-          data={recentTransactions}
+          data={paymentHistoryData}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <RecentActivityCard 
@@ -199,25 +269,55 @@ const Dashboard = ({navigation}) => {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         />
+      </View> */}
+      <View style={[styles.transactionsList, {backgroundColor: isDarkMode ? Colors.container_dark_bg : '#EBECF0'}]}>
+        <FlatList
+          ref={flatListRef}
+          data={paymentHistoryData}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <RecentActivityCard 
+              plate={item.plate} 
+              amount={item.amount} 
+              onLayout={e => {
+                if (!itemHeight) {
+                  setItemHeight(e.nativeEvent.layout.height + 8)
+                }
+              }} 
+            />
+          )}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false}  
+          style={{ maxHeight: itemHeight * maxVisible }} 
+          refreshing={refreshing}
+          onRefresh={refreshControl}
+        />
       </View>
 
+
       {/* Validate Payment Button */}
-      <Animated.View style={[
+      {/* <Animated.View style={[
         styles.buttonContainer, 
         { paddingBottom: insets.bottom || 12, backgroundColor: isDarkMode ? '#262626' : Colors.white },
         animatedButtonStyle
+        ]}> */}
+      <View style={[
+        styles.buttonContainer, 
+        { paddingBottom: insets.bottom || 12, backgroundColor: isDarkMode ? '#262626' : Colors.white }
         ]}>
         <TouchableOpacity
           style={[styles.validateButton, {backgroundColor: isDarkMode ? Colors.primary : Colors.btn}]}
           onPress={() => {
             setRfid(null)
-            setIsLoading(true)
+            setIsNFCLoading(true)
             setIsNavigating(false)
+
           }}
         >
           <Text style={[styles.validateButtonText, {color: isDarkMode ? Colors.white : Colors.white}]}>Validate Payment</Text>
         </TouchableOpacity>
-      </Animated.View>
+      {/* </Animated.View> */}
+      </View>
     </SafeAreaView>
   )
 }

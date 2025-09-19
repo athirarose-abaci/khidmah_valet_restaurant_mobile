@@ -7,9 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import ConfirmationModal from '../components/modals/ConfirmationModal';
 
-const PaymentValidationSuccessfull = ({route}) => {
-    const {parkingValidation} = route.params;
-    console.log(parkingValidation,'validationDetails');
+const PaymentValidationSuccessfull = () => {
     const navigation = useNavigation();
     const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
 

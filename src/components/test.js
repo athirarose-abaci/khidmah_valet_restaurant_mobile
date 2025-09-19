@@ -151,6 +151,58 @@ const SelectServiceScreen = ({route, navigation }) => {
             <Text style={{marginTop:5,color:Colors.white,fontFamily:'Poppins-Medium',fontSize:13}}>Raise a delivery</Text>
           </TouchableOpacity>
         </View>
+
+      {/* <FlatList
+        data={paymentHistoryData}
+        keyExtractor={(item, index) => index.toString()}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.sectionContainer}>
+            {item.transactions.map((txn, index) => (
+              <PaymentHistoryCard
+                key={txn.id}
+                item={txn}
+                showHeader={index === 0}
+                date={item.date}
+                totalCount={item.transactions.length}
+                index={index}
+              />
+            ))}
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      /> */}
+        <FlatList
+        data={paymentHistoryData}
+        keyExtractor={(item, index) => index.toString()}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.sectionContainer}>
+            {/* Header always visible */}
+            <PaymentHistoryCard
+              showHeader={true}
+              date={item.date}
+              totalCount={item.transactions.length}
+              isCollapsed={collapsedSections[item.date]}
+              onHeaderPress={() => toggleSection(item.date)}
+            />
+
+            {/* Render transactions only if expanded */}
+            {!collapsedSections[item.date] &&
+              item.transactions.map((txn, index) => (
+                <PaymentHistoryCard
+                  key={txn.id}
+                  item={txn}
+                  showHeader={false}
+                  date={item.date}
+                  totalCount={item.transactions.length}
+                  index={index}
+                />
+              ))}
+          </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      />
       </ScrollView>
     </View>
   );

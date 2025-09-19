@@ -10,8 +10,10 @@ import { Provider } from 'react-redux';
 import { ToastProvider } from './src/context/ToastContext';
 import { AxiosProvider } from './src/context/AxiosContext';
 import store from './store';
+// import { en, registerTranslation } from 'react-native-paper-dates';
 
 const Root = () => {
+    // registerTranslation('en', en);
     return (
         <Provider store={store}>
             <ToastProvider>

@@ -1,50 +1,134 @@
-import { StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, } from 'react-native';
-import React, { useState } from 'react';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, ActivityIndicator, } from 'react-native';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../constants/customStyles';
 import PaymentHistoryCard from '../components/cards/PaymentHistoryCard';
-import { paymentHistoryData } from '../constants/dummyData';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Error from '../helpers/Error';
+import { ToastContext } from '../context/ToastContext';
+import { transactionHistory } from '../apis/entities';
+import { clearPaymentHistory, formattedPaymentHistory, formattedRecentActivity, setPaymentHistory, } from '../../store/entitySlice';
+import transformPaymentHistory from '../utility/PaymentHistoryFormat';
+import NoDataLottie from '../components/lottie/NoDataLottie';
+import AbaciLoader from '../components/AbaciLoader';
+import transformRecentActivity from '../utility/RecentActivityFormat';
+import mergePaymentHistory from '../utility/mergePaymentHistory';
+import CalendarModal from '../components/modals/CalendarModal';
 
 const PaymentHistory = () => {
-  const [searchText, setSearchText] = useState('');
-  const [collapsedSections, setCollapsedSections] = useState({});
+  const [isLoading, setIsLoading] = useState(true); 
+  const [isPaginating, setIsPaginating] = useState(false); 
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const selectedDateRef = useRef(null);
+
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
+  const dispatch = useDispatch();
 
-  const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const isDarkMode = useSelector((state) => state.themeSlice.isDarkMode);
+  const currentAuthState = useSelector((state) => state.authSlice.authState);
+  const entityId = currentAuthState?.entity?.id;
+  const paymentHistoryData = useSelector( (state) => state.entitySlice.formattedPaymentHistory );
+  const toastContext = useContext(ToastContext);
 
-  const handleDateFilterPress = () => {
-    // TODO: Implement date filter action (e.g., open date picker)
+  const limit = 10;
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;  
+  }, [selectedDate]);
+
+  useEffect(() => {
+    dispatch(clearPaymentHistory());
+    paymentHistory(entityId, 1, searchQuery, limit);
+    setPage(1);
+    setSelectedDate(null);
+    selectedDateRef.current = null;
+  }, [isFocused]);
+
+  const paymentHistory = async ( entityId, pageNumber, searchQuery, limit, dateRange ) => {
+    if (pageNumber === 1) {
+      setIsLoading(true); 
+    } else {
+      setIsPaginating(true); 
+    }
+    setRefreshing(true);
+
+    try {
+      const response = await transactionHistory( entityId, pageNumber, searchQuery, limit, dateRange );
+
+      const transformePaymentHistoryData = transformPaymentHistory( response?.results );
+      const transformedRecentActivity = transformRecentActivity( response?.results );
+      dispatch(setPaymentHistory(response));
+
+      if (pageNumber > 1) {
+        const merged = mergePaymentHistory( paymentHistoryData, transformePaymentHistoryData );
+        dispatch(formattedPaymentHistory(merged));
+      } else {
+        dispatch(formattedPaymentHistory(transformePaymentHistoryData));
+      }
+
+      setPage(pageNumber + 1);
+      dispatch(formattedRecentActivity(transformedRecentActivity));
+    } catch (error) {
+      let error_msg = Error(error);
+      toastContext.showToast(error_msg, 'short', 'error');
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+      setIsPaginating(false);
+    }
   };
 
-  const toggleSection = (date) => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [date]: !prev[date],
-    }));
+  const refreshControl = () => {
+    dispatch(clearPaymentHistory());
+    setPage(1);
+    paymentHistory( entityId, 1, searchQuery, limit, selectedDateRef.current );
   };
 
   return (
-    <SafeAreaView style={[styles.container, {backgroundColor: isDarkMode ? Colors.dark_bg : Colors.white}]}>
-      <StatusBar 
-        backgroundColor={isDarkMode ? Colors.dark_bg : Colors.white} 
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: isDarkMode ? Colors.dark_bg : Colors.white },
+      ]}
+    >
+      <StatusBar
+        backgroundColor={isDarkMode ? Colors.dark_bg : Colors.white}
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
       />
-      <Text style={[styles.title, {color: isDarkMode ? Colors.white : Colors.primary}]}>Payment History</Text>
+
+      <Text
+        style={[
+          styles.title,
+          { color: isDarkMode ? Colors.white : Colors.primary },
+        ]}
+      >
+        Payment History
+      </Text>
+
       <MaterialIcons
         name="chevron-left"
         size={35}
         color={Colors.back_arrow}
         style={styles.backButton}
-        onPress={() => {
-          navigation.goBack();
-        }}
+        onPress={() => navigation.goBack()}
       />
+
       <View style={styles.filterContainer}>
-        <View style={[styles.searchBar, {backgroundColor: isDarkMode ? '#313131' : '#F6F7FB'}]}>
+        <View
+          style={[
+            styles.searchBar,
+            { backgroundColor: isDarkMode ? '#313131' : '#F6F7FB' },
+          ]}
+        >
           <Ionicons
             name="search-outline"
             size={18}
@@ -52,17 +136,20 @@ const PaymentHistory = () => {
             style={{ marginHorizontal: 8 }}
           />
           <TextInput
-            style={[styles.searchInput, {color: isDarkMode ? Colors.white : Colors.black}]}
+            style={[
+              styles.searchInput,
+              { color: isDarkMode ? Colors.white : Colors.black },
+            ]}
             placeholder="Search Vehicle..."
             placeholderTextColor="#B6B6B6"
-            value={searchText}
-            onChangeText={setSearchText}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
         </View>
 
         <TouchableOpacity
           style={styles.dateButton}
-          onPress={handleDateFilterPress}
+          onPress={() => setShowDatePicker(true)}
         >
           <Ionicons
             name="calendar-outline"
@@ -72,58 +159,74 @@ const PaymentHistory = () => {
         </TouchableOpacity>
       </View>
 
-      {/* <FlatList
-        data={paymentHistoryData}
-        keyExtractor={(item, index) => index.toString()}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={styles.sectionContainer}>
-            {item.transactions.map((txn, index) => (
-              <PaymentHistoryCard
-                key={txn.id}
-                item={txn}
-                showHeader={index === 0}
-                date={item.date}
-                totalCount={item.transactions.length}
-                index={index}
-              />
-            ))}
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      /> */}
-      <FlatList
-        data={paymentHistoryData}
-        keyExtractor={(item, index) => index.toString()}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={styles.sectionContainer}>
-            {/* Header always visible */}
-            <PaymentHistoryCard
-              showHeader={true}
-              date={item.date}
-              totalCount={item.transactions.length}
-              isCollapsed={collapsedSections[item.date]}
-              onHeaderPress={() => toggleSection(item.date)}
-            />
-
-            {/* Render transactions only if expanded */}
-            {!collapsedSections[item.date] &&
-              item.transactions.map((txn, index) => (
+      {/* Inline content */}
+      {paymentHistoryData.length === 0 && !isLoading ? (
+        <View style={styles.noDataContainer}>
+          <NoDataLottie
+            isDarkMode={isDarkMode}
+            refreshControl={refreshControl}
+          />
+        </View>
+      ) : paymentHistoryData.length > 0 ? (
+        <FlatList
+          data={paymentHistoryData}
+          keyExtractor={(item, index) => index.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          renderItem={({ item }) => (
+            <View style={styles.sectionContainer}>
+              {item.transactions.map((txn, index) => (
                 <PaymentHistoryCard
                   key={txn.id}
                   item={txn}
-                  showHeader={false}
+                  showHeader={index === 0}
                   date={item.date}
                   totalCount={item.transactions.length}
                   index={index}
                 />
               ))}
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      />
+            </View>
+          )}
+          refreshing={refreshing}
+          onRefresh={refreshControl}
+          onEndReachedThreshold={0.01}
+          onEndReached={() => {
+            if (page > 1) {
+              paymentHistory( entityId, page, searchQuery, limit, selectedDateRef.current );
+            }
+          }}
+          ListFooterComponent={
+            isPaginating ? (
+              <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+              </View>
+            ) : null
+          }
+        />
+      ) : null}
 
+      {/* Full screen loader */}
+      <AbaciLoader visible={isLoading} />
+
+      {/* Calendar modal */}
+      <CalendarModal
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        selectedDateRef={selectedDateRef}
+        onRangeSelected={(newSelection) => {
+          setShowDatePicker(false);
+          dispatch(clearPaymentHistory());
+          setPage(1);
+          paymentHistory(entityId, 1, searchQuery, limit, newSelection);
+        }}
+        onClear={() => {
+          dispatch(clearPaymentHistory());
+          setPage(1);
+          paymentHistory(entityId, 1, searchQuery, limit, null);
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -181,10 +284,12 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   sectionContainer: {
-    // width: '100%',
-    // backgroundColor: Colors.white,
-    // backgroundColor: 'blue',
     marginHorizontal: 0,
     paddingHorizontal: 0,
+  },
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
