@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from 'react'
-import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, Dimensions, Animated } from 'react-native'
+import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList, Dimensions,} from 'react-native'
 import { Colors } from '../constants/customStyles'
-import ArrowRight from '@react-native-vector-icons/material-icons'
 import RecentActivityCard from '../components/cards/RecentActivityCard'
 import NFCCardTapLoader from '../components/NFCCardTapLoader'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'

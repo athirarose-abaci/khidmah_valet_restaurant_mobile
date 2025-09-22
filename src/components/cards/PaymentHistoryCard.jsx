@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 
 const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index }) => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-
+  console.log(item, "item from history card")
   return (
     <View style={[styles.mainContainer, {backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white}]}>
       {showHeader && (
@@ -20,16 +20,24 @@ const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index 
       )}
 
       {item && (
-        <View style={styles.container}>
-          <Image source={item.image} style={styles.avatar} />
-          <Text style={[styles.plate, {color: isDarkMode ? Colors.secondary : Colors.primary}]}>{item.plate}</Text>
+        <View style={styles.itemContainer}>
+          <View style={styles.container}>
+            <Image source={item.image} style={styles.avatar} />
+            <Text style={[styles.plate, {color: isDarkMode ? Colors.secondary : Colors.primary}]}>{item.plate}</Text>
 
-          <View style={[styles.amountContainer, {backgroundColor: isDarkMode ? Colors.small_container_dark_bg : '#F9F9F9'}]}>
-            <Text style={[styles.amount,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.amount}</Text>
-            <Text style={[styles.currency,{color: isDarkMode ? Colors.white : '#909090'}]}> AED</Text>
+            <View style={[styles.amountContainer, {backgroundColor: isDarkMode ? Colors.small_container_dark_bg : '#F9F9F9'}]}>
+              <Text style={[styles.amount,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.amount}</Text>
+              <Text style={[styles.currency,{color: isDarkMode ? Colors.white : '#909090'}]}> AED</Text>
+            </View>
+
+            <Text style={[styles.time,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.time}</Text>
           </View>
 
-          <Text style={[styles.time,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.time}</Text>
+            <View style={styles.modifiedByContainer}>
+              <Text style={[styles.modifiedByText, {color: isDarkMode ? Colors.white : '#909090'}]}>
+                Modified by: <Text style={styles.modifiedByName}>{item.modified_by}</Text>
+              </Text>
+            </View>
         </View>
       )}
 
@@ -37,7 +45,6 @@ const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index 
     </View>
   );
 };
-
 
 export default PaymentHistoryCard;
 
@@ -76,12 +83,29 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     marginHorizontal: 35,
   },
+  itemContainer: {
+    width: '100%',
+  },
   container: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 35,
+  },
+  modifiedByContainer: {
+    paddingHorizontal: 35,
+    paddingBottom: 10,
+    marginLeft: 65, // Align with plate text (avatar width + margin)
+  },
+  modifiedByText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+  },
+  modifiedByName: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: Colors.primary,
   },
   avatar: {
     width: 50,

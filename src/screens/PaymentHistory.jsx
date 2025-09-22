@@ -63,6 +63,7 @@ const PaymentHistory = () => {
 
     try {
       const response = await transactionHistory( entityId, pageNumber, searchQuery, limit, dateRange );
+      console.log(response, "from payment history")
 
       const transformePaymentHistoryData = transformPaymentHistory( response?.results );
       const transformedRecentActivity = transformRecentActivity( response?.results );

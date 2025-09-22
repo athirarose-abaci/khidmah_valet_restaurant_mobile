@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setIsDarkMode } from './store/themeSlice';
 import AbaciToast from './src/components/AbaciToast';
 import { checkSystemStatus, userProfile } from './src/apis/authentication';
-import { removeData } from './src/helpers/asyncStorageHelper';
+import { removeData, storeData } from './src/helpers/asyncStorageHelper';
 import { setAuthState } from './store/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearCookies } from './src/helpers/clearCookieHelper';
@@ -106,6 +106,7 @@ const App = () => {
       </View>
     </ThemeProvider>
   );
+
 };
 
 export default App;

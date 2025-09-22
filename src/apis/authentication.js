@@ -47,10 +47,42 @@ export const resetPassword = async(username, current_password, new_password)=>{
 }
 
 //************ FORGOT PASSWORD ************ //
+export const requestForgotPasswordOTP = async (username) => {
+  const payload = {
+    username: username,
+  }
+  try {
+    const response = await publicAxios.post('users/forgot-password/', payload);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
+export const verifyForgotPasswordOTP = async (otp_code, username) => {
+  try {
+    const response = await publicAxios.get('users/forgot-password/', {
+      params: { otp_code, username },
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
-
-
+export const submitForgotPassword = async ( username, otp_code, new_password, ) => {
+  try {
+    const payload = {
+      username: username,
+      otp_code: otp_code,
+      new_password: new_password,
+    };
+    const response = await publicAxios.patch('users/forgot-password/', payload);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 //************ CHANGE PASSWORD ************ //
 export const changePassword = async (payload) => {

@@ -2,8 +2,6 @@ import {
   View,
   Image,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   StatusBar,
   BackHandler,
 } from 'react-native';
@@ -12,6 +10,9 @@ import BackgroundImage from '../components/BackgroundImage';
 import { Colors } from '../constants/customStyles';
 import ResetPasswordComponent from '../components/login/ResetPasswordComponent';
 import LoginComponent from '../components/login/LoginComponent';
+import ForgotPasswordComponent from '../components/login/ForgotPasswordComponent';
+import VerifyOTPComponent from '../components/login/VerifyOTPComponent';
+import SetPasswordComponent from '../components/login/SetPasswordComponent';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 
@@ -23,7 +24,7 @@ const Login = () => {
     const subscription = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
-        if (currentScreen === 'resetPassword') {
+        if (currentScreen === 'resetPassword' || currentScreen === 'forgotPassword' || currentScreen === 'verifyOTP' || currentScreen === 'setPassword') {
           setCurrentScreen('login');
           return true;
         }
@@ -34,7 +35,7 @@ const Login = () => {
   }, [currentScreen]); // <-- include currentScreen here!
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
       <StatusBar
         translucent
         backgroundColor="transparent"
@@ -55,6 +56,21 @@ const Login = () => {
                 key={'login'}
                 setCurrentScreen={setCurrentScreen}
               />
+            ) : currentScreen === 'forgotPassword' ? (
+              <ForgotPasswordComponent
+                key={'forgotPassword'}
+                setCurrentScreen={setCurrentScreen}
+              />
+            ) : currentScreen === 'verifyOTP' ? (
+              <VerifyOTPComponent
+                key={'verifyOTP'}
+                setCurrentScreen={setCurrentScreen}
+              />
+            ) : currentScreen === 'setPassword' ? (
+              <SetPasswordComponent
+                key={'setPassword'}
+                setCurrentScreen={setCurrentScreen}
+              />
             ) : (
               <ResetPasswordComponent
                 key={'resetPassword'}
@@ -69,6 +85,9 @@ const Login = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   main_container: {
     flex: 1,
     backgroundColor: Colors.black,

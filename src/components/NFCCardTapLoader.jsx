@@ -21,18 +21,18 @@ const NFCCardTapLoader = ({ isVisible, setRfid, setIsLoading, messages = {}, }) 
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const toastContext = useContext(ToastContext);
 
-  // const fetchRfid=()=>{
-  //     // Clear the timeout since RFID was fetched successfully
-  //     if (timeoutRef.current) {
-  //         clearTimeout(timeoutRef.current);
-  //         timeoutRef.current = null;
-  //     }
-  //     if (rfidTimeout.current) {
-  //         clearTimeout(rfidTimeout.current);
-  //         rfidTimeout.current = null;
-  //     }
-  //     setRfid('1778174125')
-  // }
+  const fetchRfid = () => {
+    // Clear the timeout since RFID was fetched successfully
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (rfidTimeout.current) {
+      clearTimeout(rfidTimeout.current);
+      rfidTimeout.current = null;
+    }
+    setRfid('0458F98A4B7580')
+  }
 
   const readNfc = async () => {
     try {
@@ -69,37 +69,55 @@ const NFCCardTapLoader = ({ isVisible, setRfid, setIsLoading, messages = {}, }) 
     }
   };
 
-  // useEffect(() => {
-  //   if (isVisible) {
-  //     setRfid(null);
-  //     readNfc();
-  //     setTimeout(() => {
-  //       setIsLoading('error');
-  //     }, 30000);
-  //   }
-  // }, [isVisible]);
-
   useEffect(() => {
     if (isVisible) {
       setRfid(null);
-      rfidTimeout.current = setTimeout(() => {
-        // fetchRfid();
-        readNfc();
-      }, 10000);
-      // Set timeout and store reference
-      timeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
+      fetchRfid();
+      // readNfc();
+      
+      // Set timeout for error state
+      const errorTimeout = setTimeout(() => {
+        setIsLoading('error');
       }, 30000);
+
+      // Store timeout reference for cleanup
+      timeoutRef.current = errorTimeout;
     }
 
-    // // Cleanup function to clear timeout when component unmounts or focus changes
+    // Cleanup function
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      if (rfidTimeout.current) {
+        clearTimeout(rfidTimeout.current);
+        rfidTimeout.current = null;
+      }
     };
   }, [isVisible]);
+
+  // useEffect(() => {
+  //   if (isVisible) {
+  //     setRfid(null);
+  //     rfidTimeout.current = setTimeout(() => {
+  //       // fetchRfid();
+  //       readNfc();
+  //     }, 10000);
+  //     // Set timeout and store reference
+  //     timeoutRef.current = setTimeout(() => {
+  //       setIsLoading(false);
+  //     }, 30000);
+  //   }
+
+  //   // Cleanup function to clear timeout when component unmounts or focus changes
+  //   return () => {
+  //     if (timeoutRef.current) {
+  //       clearTimeout(timeoutRef.current);
+  //       timeoutRef.current = null;
+  //     }
+  //   };
+  // }, [isVisible]);
 
   // Merge supplied messages with defaults so callers can override only the parts they need.
   const defaultMessages = {

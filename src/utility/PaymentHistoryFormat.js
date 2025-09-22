@@ -16,6 +16,7 @@ const transformPaymentHistory = (results) => {
         amount: txn.rate || '0.00',
         time: moment(txn.created_at).format('h:mm A'),
         image: require('../assets/images/car_avatar.png'),
+        modified_by: txn.modified_by?.full_name || 'Unknown',
       });
   
       return acc;

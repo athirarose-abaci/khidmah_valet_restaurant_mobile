@@ -4,15 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { userLogin } from '../../apis/authentication';
 import { setAuthState, setLoginCredentials } from '../../../store/authSlice';
 import { storeData } from '../../helpers/asyncStorageHelper';
-import {
-  ActivityIndicator,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
 import CookieManager from '@react-native-cookies/cookies';
 import Error from '../../helpers/Error';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -45,6 +37,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
     try {
       const userData = await userLogin(userEmail, password);
       if (userData?.password_reset_required) {
+        console.log('userData from the login component', userData)
         const loginData = {
           username: userEmail,
           current_password: password,
@@ -58,7 +51,9 @@ const LoginComponent = ({ setCurrentScreen }) => {
         await storeData('data', JSON.stringify(authData));
       }
     } catch (error) {
+      console.log('error from the login component', error)
       let err_msg = Error(error);
+      console.log('error message from the login component', err_msg)
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsLoading(false);
@@ -70,7 +65,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1 }}
       enableOnAndroid={true}
-      extraScrollHeight={60}     
+      extraScrollHeight={0}     
       showsVerticalScrollIndicator={false} 
       keyboardShouldPersistTaps="handled"
     >
@@ -248,7 +243,7 @@ const styles = StyleSheet.create({
     height: '85%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingRight: 25,
+    paddingRight: 22,
   },
   icon: {
     width: 20,
