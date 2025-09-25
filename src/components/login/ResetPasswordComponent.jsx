@@ -28,7 +28,6 @@ import { Colors } from '../../constants/customStyles';
         toastContext.showToast('Passwords do not match', 'short', 'error');
         return;
       }
-      console.log('loginCredentials', loginCredentials);
   
       setIsLoading(true);
       try {
@@ -41,7 +40,6 @@ import { Colors } from '../../constants/customStyles';
         toastContext.showToast( 'Password reset successful. Please login with your new password.', 'short', 'success', );
         setCurrentScreen('login');
       } catch (error) {
-        console.log('error', error);
         let err_msg = Error(error);
         toastContext.showToast(err_msg, 'short', 'error');
       } finally {

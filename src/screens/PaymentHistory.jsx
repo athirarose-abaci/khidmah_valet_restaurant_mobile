@@ -1,4 +1,5 @@
 import { StatusBar, StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, ActivityIndicator, } from 'react-native';
+import moment from 'moment';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Colors } from '../constants/customStyles';
@@ -22,7 +23,7 @@ const PaymentHistory = () => {
   const [isLoading, setIsLoading] = useState(true); 
   const [isPaginating, setIsPaginating] = useState(false); 
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('null');
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -40,17 +41,21 @@ const PaymentHistory = () => {
 
   const limit = 10;
   const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
 
   useEffect(() => {
     selectedDateRef.current = selectedDate;  
   }, [selectedDate]);
 
   useEffect(() => {
-    dispatch(clearPaymentHistory());
-    paymentHistory(entityId, 1, searchQuery, limit);
-    setPage(1);
-    setSelectedDate(null);
-    selectedDateRef.current = null;
+    if(isFocused){
+      dispatch(clearPaymentHistory());
+      paymentHistory(entityId, 1, searchQuery, limit);
+      setPage(1);
+      setSelectedDate(null);
+      selectedDateRef.current = null;
+    }
   }, [isFocused]);
 
   const paymentHistory = async ( entityId, pageNumber, searchQuery, limit, dateRange ) => {
@@ -59,11 +64,15 @@ const PaymentHistory = () => {
     } else {
       setIsPaginating(true); 
     }
-    setRefreshing(true);
+    if (pageNumber === 1) {
+      // show full screen loader instead of top refresh
+      setRefreshing(false);
+    } else {
+      setRefreshing(true);
+    }
 
     try {
       const response = await transactionHistory( entityId, pageNumber, searchQuery, limit, dateRange );
-      console.log(response, "from payment history")
 
       const transformePaymentHistoryData = transformPaymentHistory( response?.results );
       const transformedRecentActivity = transformRecentActivity( response?.results );
@@ -77,6 +86,12 @@ const PaymentHistory = () => {
       }
 
       setPage(pageNumber + 1);
+      // Determine if there is a next page
+      if (response?.results?.length < limit || !response?.next) {
+        setHasNextPage(false);
+      } else {
+        setHasNextPage(true);
+      }
       dispatch(formattedRecentActivity(transformedRecentActivity));
     } catch (error) {
       let error_msg = Error(error);
@@ -88,10 +103,33 @@ const PaymentHistory = () => {
     }
   };
 
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (isFocused && searchQuery !== 'null') {
+        setIsSearchLoading(true);
+        (async () => {
+          dispatch(clearPaymentHistory());
+          setPage(1);
+          await paymentHistory(entityId, 1, searchQuery, limit, selectedDateRef.current);
+          setIsSearchLoading(false);
+        })();
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
   const refreshControl = () => {
+    const defaultSearch = 'null';
+    if (searchQuery !== defaultSearch) {
+      setSearchQuery(defaultSearch);
+    }
+
     dispatch(clearPaymentHistory());
     setPage(1);
-    paymentHistory( entityId, 1, searchQuery, limit, selectedDateRef.current );
+    setHasNextPage(true);
+
+    paymentHistory(entityId, 1, defaultSearch, limit, selectedDateRef.current);
   };
 
   return (
@@ -106,12 +144,7 @@ const PaymentHistory = () => {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
       />
 
-      <Text
-        style={[
-          styles.title,
-          { color: isDarkMode ? Colors.white : Colors.primary },
-        ]}
-      >
+      <Text style={[ styles.title, { color: isDarkMode ? Colors.white : Colors.primary }, ]} >
         Payment History
       </Text>
 
@@ -143,8 +176,8 @@ const PaymentHistory = () => {
             ]}
             placeholder="Search Vehicle..."
             placeholderTextColor="#B6B6B6"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
+            value={searchQuery!=='null' ? searchQuery : ''}
+            onChangeText={text => setSearchQuery(text)}
           />
         </View>
 
@@ -159,6 +192,35 @@ const PaymentHistory = () => {
           />
         </TouchableOpacity>
       </View>
+
+      {/* Show active date filter */}
+      {selectedDate?.startDate && selectedDate?.endDate && (
+        <View style={styles.dateFilterBadge}>
+          <Text style={styles.dateFilterText}>
+            {`${moment(selectedDate.startDate).format('DD MMM YYYY')} - ${moment(selectedDate.endDate).format('DD MMM YYYY')}`}
+          </Text>
+          <TouchableOpacity
+            style={styles.clearFilterBtn}
+            onPress={() => {
+              setSelectedDate(null);
+              selectedDateRef.current = null;
+              dispatch(clearPaymentHistory());
+              setPage(1);
+              setHasNextPage(true);
+              paymentHistory(entityId, 1, searchQuery, limit, null);
+            }}
+          >
+            <Ionicons name="close" size={14} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Show small loader for search */}
+      {isSearchLoading && (
+        <View style={{ alignSelf: 'center', marginVertical: 10 }}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+        </View>
+      )}
 
       {/* Inline content */}
       {paymentHistoryData.length === 0 && !isLoading ? (
@@ -192,7 +254,7 @@ const PaymentHistory = () => {
           onRefresh={refreshControl}
           onEndReachedThreshold={0.01}
           onEndReached={() => {
-            if (page > 1) {
+            if (hasNextPage && !isPaginating && !isLoading && page > 1) {
               paymentHistory( entityId, page, searchQuery, limit, selectedDateRef.current );
             }
           }}
@@ -207,7 +269,7 @@ const PaymentHistory = () => {
       ) : null}
 
       {/* Full screen loader */}
-      <AbaciLoader visible={isLoading} />
+      <AbaciLoader visible={isLoading && searchQuery === 'null'} />
 
       {/* Calendar modal */}
       <CalendarModal
@@ -292,5 +354,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  dateFilterBadge: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    marginLeft: 25,
+    backgroundColor: Colors.secondary,
+    borderRadius: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  dateFilterText: {
+    color: Colors.white,
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    marginRight: 6,
+  },
+  clearFilterBtn: {
+    padding: 2,
   },
 });

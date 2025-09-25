@@ -5,17 +5,20 @@ import CheckLottie from '../components/CheckLottie';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
-import ConfirmationModal from '../components/modals/ConfirmationModal';
+import { useRoute } from '@react-navigation/native';
+import DeliveryRequestModal from '../components/modals/DeliveryRequestModal';
 
 const PaymentValidationSuccessfull = () => {
     const navigation = useNavigation();
+    const route = useRoute();
+    const { alreadyValidated, isVipVehicle } = route.params || {};
     const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+    const currentAuthState = useSelector(state => state.authSlice.authState);
 
-    const [modalVisible, setModalVisible] = useState(false);
+    const [deliveryRequestModal, setDeliveryRequestModal] = useState(false);
 
     const handleConfirmDeliveryRequest = () => {
-        setModalVisible(false);
-        navigation.navigate('DeliveryRequest');
+        setDeliveryRequestModal(true);
     }
 
   return (
@@ -30,42 +33,54 @@ const PaymentValidationSuccessfull = () => {
       >
         <CheckLottie style={styles.lottie} />
         <Text style={[styles.title, {color: isDarkMode ? '#CCCCCC' : Colors.btn}]}>
-          Customer's valet parking{'\n'}payment has been validated{'\n'}
-          successfully.
+          {alreadyValidated
+            ? `Customer’s valet parking${'\n'}has already been validated successfully.`
+            : isVipVehicle
+            ? `This is a VIP vehicle and${'\n'} does not require validation for valet parking.`
+            : "Customer’s valet parking payment${'\n'}was successfully validated."}
         </Text>
 
-        {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Dashboard')}>
-            <MaterialIcons name="home" size={20} color="white" />
-            <Text style={styles.buttonText}>Back to Home</Text>
-        </TouchableOpacity> */}
         <View style={styles.buttonRow}>
-          {/* Back to Home */}
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Dashboard')}
-          >
-            <MaterialIcons name="home" size={20} color="white" />
-            <Text style={styles.buttonText}>Back to Home</Text>
-          </TouchableOpacity>
+          {currentAuthState?.entity?.is_allow_delivery_requests ? (
+            <>
+              {/* Back to Home */}
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => navigation.navigate('Dashboard')}
+              >
+                <MaterialIcons name="home" size={20} color="white" />
+                <Text style={styles.buttonText}>Back to Home</Text>
+              </TouchableOpacity>
 
-          {/* Delivery Request */}
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <MaterialIcons name="local-shipping" size={20} color="white" />
-            <Text style={styles.buttonText}>Delivery Request</Text>
-          </TouchableOpacity>
+              {/* Delivery Request */}
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={handleConfirmDeliveryRequest}
+              >
+                <MaterialIcons name="local-shipping" size={20} color="white" />
+                <Text style={styles.buttonText}>Delivery Request</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            // Only Back to Home (centered if delivery is not allowed)
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('Dashboard')}
+            >
+              <MaterialIcons name="home" size={20} color="white" />
+              <Text style={styles.buttonText}>Back to Home</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
-      <ConfirmationModal
-        isVisible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-        onConfirm={handleConfirmDeliveryRequest}
-        title="Delivery Request"
-        message="Do you want to raise a delivery request?"
-        confirmText="Yes"
-        cancelText="No"
+
+      <DeliveryRequestModal
+        isVisible={deliveryRequestModal}
+        onClose={() => setDeliveryRequestModal(false)}
+        onConfirmed={() => {
+          setDeliveryRequestModal(false);
+          navigation.navigate('Dashboard');
+        }}
       />
     </View>
   );

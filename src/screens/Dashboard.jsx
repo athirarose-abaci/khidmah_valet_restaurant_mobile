@@ -16,6 +16,7 @@ import transformPaymentHistory from '../utility/PaymentHistoryFormat'
 import transformRecentActivity from '../utility/RecentActivityFormat'
 import { clearPaymentHistory, formattedPaymentHistory, formattedRecentActivity, setPaymentHistory } from '../../store/entitySlice'
 import AbaciLoader from '../components/AbaciLoader'
+import NoDataLottie from '../components/lottie/NoDataLottie'
 
 const Dashboard = ({navigation}) => {
   const insets = useSafeAreaInsets()
@@ -43,6 +44,7 @@ const Dashboard = ({navigation}) => {
   const [itemHeight, setItemHeight] = useState(0)
   const windowHeight = Dimensions.get('window').height
   const visibleArea = windowHeight * 0.50
+  const dynamicListMinHeight = windowHeight * 0.48;
   const maxVisible = itemHeight ? Math.max(1, Math.floor(visibleArea / itemHeight)) : 3 // fallback
 
   // const buttonAnim = useRef(new Animated.Value(1)).current
@@ -82,9 +84,11 @@ const Dashboard = ({navigation}) => {
   // }, [showAll])
 
   useEffect(() => {
+    if(isFocused){
       fetchTransactionSummary();
       dispatch(clearPaymentHistory());
       paymentHistory(entityId, 1, '', 10);
+    }
   }, [isFocused]);
 
   const parkingValidationDetailsHandler = async () => {
@@ -94,7 +98,13 @@ const Dashboard = ({navigation}) => {
     try {
       const response = await parkingValidationDetails(rfid);
       dispatch(setEntityDetails(response));
-      navigation.navigate('ValidatePayment', { validationDetails: response, rfid: rfid });
+      if (response?.parking_already_validated === true) {
+        navigation.navigate('PaymentValidationSuccessfull', { alreadyValidated: true });
+      } else if(response?.vip_vehicle === true){
+        navigation.navigate('PaymentValidationSuccessfull', { isVipVehicle: true });
+      }else {
+        navigation.navigate('ValidatePayment', { validationDetails: response, rfid: rfid });
+      }
     } catch (error) {
       let err_msg = Error(error);
       toastContext.showToast(err_msg, 'long', 'error');
@@ -144,14 +154,6 @@ const Dashboard = ({navigation}) => {
   useEffect(() => {
     if (rfid && !isNavigating) {
       parkingValidationDetailsHandler();
-      // Navigate immediately
-      // navigation.navigate('ValidatePayment');
-      
-      // Dismiss loader after navigation with a longer delay
-      // setTimeout(() => {
-      //   setIsLoading(false);
-      //   setRfid(null);
-      // }, 300); 
     }
   }, [rfid, isNavigating, navigation]);
 
@@ -185,11 +187,11 @@ const Dashboard = ({navigation}) => {
             source={
               currentAuthState?.entity?.entity_logo 
               ? {uri: currentAuthState?.entity?.entity_logo}
-              : require('../assets/images/restaurant_avatar.png')
+              : require('../assets/images/restaurant_default_logo.png')
             }
             style={styles.avatar}
           />
-          <Text style={[styles.restaurantName, {color: isDarkMode ? Colors.white : Colors.primary}]}>Smoked & Co.</Text>
+          <Text style={[styles.restaurantName, {color: isDarkMode ? Colors.white : Colors.primary}]}>{currentAuthState?.entity?.name}</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.historyButton, {backgroundColor: isDarkMode ? Colors.btn : Colors.black}]} 
@@ -269,28 +271,37 @@ const Dashboard = ({navigation}) => {
           scrollEventThrottle={16}
         />
       </View> */}
-      <View style={[styles.transactionsList, {backgroundColor: isDarkMode ? Colors.container_dark_bg : '#EBECF0'}]}>
-        <FlatList
-          ref={flatListRef}
-          data={paymentHistoryData}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <RecentActivityCard 
-              plate={item.plate} 
-              amount={item.amount} 
-              onLayout={e => {
-                if (!itemHeight) {
-                  setItemHeight(e.nativeEvent.layout.height + 8)
-                }
-              }} 
-            />
-          )}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={false}  
-          style={{ maxHeight: itemHeight * maxVisible }} 
-          refreshing={refreshing}
-          onRefresh={refreshControl}
-        />
+      <View style={[styles.transactionsList, styles.transactionsListDark(isDarkMode), {minHeight: dynamicListMinHeight}] }>
+        {paymentHistoryData.length === 0 ? (
+          <View style={styles.noDataContainer}>
+            <NoDataLottie isDarkMode={isDarkMode} refreshControl={refreshControl} />
+          </View>
+        ) : paymentHistoryData.length > 0 ? (
+          <FlatList
+            ref={flatListRef}
+            data={paymentHistoryData}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <RecentActivityCard 
+                plate={item.plate} 
+                amount={item.amount} 
+                date={item.date}
+                time={item.time}
+                txn_id={item.txn_id}
+                onLayout={e => {
+                  if (!itemHeight) {
+                    setItemHeight(e.nativeEvent.layout.height + 8)
+                  }
+                }} 
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}  
+            style={{ maxHeight: itemHeight * maxVisible }} 
+            refreshing={refreshing}
+            onRefresh={refreshControl}
+          />
+        ) : null}
       </View>
 
 
@@ -328,14 +339,21 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 2
   },
-
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    minHeight: 280,
+  },
   /** Header */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: 10, 
+    paddingHorizontal: 12,
+    marginBottom: 10,
   },
   restaurantWrapper: {
     flexDirection: 'row',
@@ -455,9 +473,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 18,
     borderRadius: 25,
-    paddingVertical: 18, 
+    paddingVertical: 18,
     paddingHorizontal: 15,
+    minHeight: 450, 
   },
+  transactionsListDark: (isDarkMode) => ({
+    backgroundColor: isDarkMode ? Colors.container_dark_bg : '#EBECF0',
+  }),
   buttonContainer: {
     position: 'absolute', 
     left: 0,

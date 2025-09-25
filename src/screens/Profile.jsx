@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, Switch, StatusBar, ImageBackground } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, Switch, StatusBar, ImageBackground, StyleSheet } from 'react-native';
 import { ScaledSheet, scale, moderateScale } from 'react-native-size-matters';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useContext, useEffect, useState } from 'react';
@@ -17,6 +17,7 @@ import { removeData } from '../helpers/asyncStorageHelper';
 import { clearCookies } from '../helpers/clearCookieHelper';
 import { ToastContext } from '../context/ToastContext';
 import Error from '../helpers/Error';
+import AbaciLoader from '../components/AbaciLoader';
 
 
 const Profile = ({}) => {
@@ -34,7 +35,9 @@ const Profile = ({}) => {
   const currentAuthState = useSelector(state => state.authSlice.authState);
 
   useEffect(() => {
-    profileData();
+    if(isFocused){
+      profileData();
+    }
   }, [isFocused]);
   
   const profileData = async () => {
@@ -68,14 +71,16 @@ const Profile = ({}) => {
   };
 
   return (
-    <ImageBackground
-      source={require('../assets/images/profile_background.png')}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar translucent backgroundColor='transparent' barStyle="light-content" />
-      
+
+      {/* Background image covering entire screen */}
+      <ImageBackground
+        source={require('../assets/images/profile_background.png')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+
       <View style={styles.mainContainer}>
         {/* TOP secttion part */}
         <View style={styles.topSection}>
@@ -102,7 +107,7 @@ const Profile = ({}) => {
               source={
                 currentAuthState?.entity?.entity_logo 
                 ? {uri: currentAuthState?.entity?.entity_logo}
-                : require('../assets/images/restaurant_avatar.png')
+                : require('../assets/images/restaurant_default_logo.png')
               }
               style={styles.profileImage}
               resizeMode="cover"
@@ -210,8 +215,8 @@ const Profile = ({}) => {
         confirmText="Logout"
         cancelText="Cancel"
       />
-      </SafeAreaView>
-    </ImageBackground>
+      <AbaciLoader visible={isLoading} />
+    </SafeAreaView>
   );
 };
 

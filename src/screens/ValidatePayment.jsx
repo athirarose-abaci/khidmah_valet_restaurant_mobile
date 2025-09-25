@@ -11,23 +11,6 @@ import { ToastContext } from '../context/ToastContext';
 import { setEntityValidationDetails } from '../../store/jobSlice';
 import AbaciLoader from '../components/AbaciLoader';
 
-// row component
-const PaymentRow = ({ label, value, isTotal, isDarkMode }) => (
-  <View style={styles.paymentRow}>
-    <Text style={[styles.paymentDetailsText, isTotal]}>
-      {label}
-    </Text>
-    <Text
-      style={[
-        styles.paymentDetailsValue,
-        { color: isDarkMode ? Colors.white : '#5C5C5C' }, 
-        isTotal && styles.totalValue,
-      ]}
-    >      {value}
-    </Text>
-  </View>
-);
-
 const ValidatePayment = ({ route }) => {
   const { validationDetails, rfid } = route.params;
   const insets = useSafeAreaInsets();
@@ -35,7 +18,7 @@ const ValidatePayment = ({ route }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [validated, setValidated] = useState(false);
-  
+
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
   const toastContext = useContext(ToastContext);
@@ -45,29 +28,30 @@ const ValidatePayment = ({ route }) => {
 
   const handleValidatePayment = async () => {
     setIsLoading(true);
-    setValidated(true); 
+    setValidated(true);
     try {
       const response = await parkingValidation(rfid);
-      console.log('response', response);
-      console.log('response', response.status);
       dispatch(setEntityValidationDetails(response.data));
-      console.log('response', response.data);
-      console.log('response', response.status);
       if (response.status === 201) {
-        navigation.navigate('PaymentValidationSuccessfull', { validationDetails: response.data });
-      }    
+        navigation.navigate('PaymentValidationSuccessfull', {
+          validationDetails: response.data,
+        });
+      }
     } catch (error) {
-      console.log('error', error);
       let err_msg = Error(error);
-      console.log('err_msg', err_msg);
       toastContext.showToast(err_msg, 'long', 'error');
-    }finally{
+
+      Animated.timing(slideX, {
+        toValue: 5,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } finally {
       setValidated(false);
       setIsLoading(false);
     }
   };
-  
-  // keep track width dynamically for responsive devices
+
   const trackWidthRef = useRef(0);
   const panResponder = useRef(
     PanResponder.create({
@@ -118,12 +102,7 @@ const ValidatePayment = ({ route }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={[
-            styles.title,
-            { color: isDarkMode ? Colors.white : Colors.primary },
-          ]}
-        >
+        <Text style={[ styles.title, { color: isDarkMode ? Colors.white : Colors.primary }, ]} >
           Validate Payment
         </Text>
 
@@ -143,7 +122,11 @@ const ValidatePayment = ({ route }) => {
         <View
           style={[
             styles.paymentDetailsContainer,
-            { backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white },
+            {
+              backgroundColor: isDarkMode
+                ? Colors.container_dark_bg
+                : Colors.white,
+            },
           ]}
         >
           <Image
@@ -155,45 +138,83 @@ const ValidatePayment = ({ route }) => {
             style={styles.logo}
           />
 
-          <Text
-            style={[
-              styles.plateNoTitle,
-              { color: isDarkMode ? Colors.white : Colors.primary },
-            ]}
-          >
+          <Text style={[ styles.plateNoTitle, { color: isDarkMode ? Colors.white : Colors.primary }, ]} >
             Plate No.
           </Text>
-          <Text
-            style={[
-              styles.plateNoValue,
-              { color: isDarkMode ? Colors.white : Colors.primary },
-            ]}
-          >
+          <Text style={[ styles.plateNoValue, { color: isDarkMode ? Colors.white : Colors.primary }, ]} >
             {validationDetails?.vehicle?.plate_number}
           </Text>
 
           <View
             style={[
               styles.paymentCard,
-              { backgroundColor: isDarkMode ? Colors.card_dark_bg : Colors.white },
+              {
+                backgroundColor: isDarkMode
+                  ? Colors.card_dark_bg
+                  : Colors.white,
+              },
             ]}
           >
-          <Text style={[styles.entityName]}>
-            {/* <Text style={{ color: isDarkMode ? Colors.white : '#A0A0A0' }}>
-              Validation for{" "}
-            </Text> */}
-            <Text style={{ color: isDarkMode ? Colors.white : Colors.secondary }}>
-              {validationDetails?.entity?.name}
+            <Text style={[styles.entityName]}>
+              <Text
+                style={{
+                  color: isDarkMode ? Colors.white : Colors.secondary,
+                }}
+              >
+                {validationDetails?.entity?.name}
+              </Text>
             </Text>
-          </Text>
-            <Text style={[styles.paymentCardTitle, {color: isDarkMode ? Colors.white : '#A0A0A0'}]}>Payment Details</Text>
+            <Text
+              style={[
+                styles.paymentCardTitle,
+                { color: isDarkMode ? Colors.white : '#A0A0A0' },
+              ]}
+            >
+              Payment Details
+            </Text>
 
-            <PaymentRow label="Service Charge" value={validationDetails?.original_service_charge + ' AED'} isDarkMode={isDarkMode} />
-            <View style={styles.divider} />
-            <PaymentRow label="VAT" value={validationDetails?.tax_amount + ' AED'} isDarkMode={isDarkMode} />
-            <View style={styles.divider} />
-            <PaymentRow label="Total Amount" value={validationDetails?.total_amount + ' AED'} isTotal isDarkMode={isDarkMode} />
+            {/* Service Charge */}
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentDetailsText}>Service Charge</Text>
+              <Text
+                style={[
+                  styles.paymentDetailsValue,
+                  { color: isDarkMode ? Colors.white : '#5C5C5C' },
+                ]}
+              >
+                {validationDetails?.original_service_charge + ' AED'}
+              </Text>
             </View>
+            <View style={styles.divider} />
+
+            {/* VAT */}
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentDetailsText}>{validationDetails?.tax_type}</Text>
+              <Text
+                style={[
+                  styles.paymentDetailsValue,
+                  { color: isDarkMode ? Colors.white : '#5C5C5C' },
+                ]}
+              >
+                {validationDetails?.tax_amount + ' AED'}
+              </Text>
+            </View>
+            <View style={styles.divider} />
+
+            {/* Total Amount */}
+            <View style={styles.paymentRow}>
+              <Text style={[styles.paymentDetailsText]}>Total Amount</Text>
+              <Text
+                style={[
+                  styles.paymentDetailsValue,
+                  { color: isDarkMode ? Colors.white : '#5C5C5C' },
+                  styles.totalValue,
+                ]}
+              >
+                {validationDetails?.total_amount + ' AED'}
+              </Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -203,12 +224,17 @@ const ValidatePayment = ({ route }) => {
           styles.sliderWrapper,
           {
             paddingBottom: insets.bottom || 10,
-            backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.screen_bg,
+            backgroundColor: isDarkMode
+              ? Colors.container_dark_bg
+              : Colors.screen_bg,
           },
         ]}
       >
         <View
-          style={[styles.sliderTrack,{backgroundColor: isDarkMode ? Colors.btn_dark : Colors.btn}]}
+          style={[
+            styles.sliderTrack,
+            { backgroundColor: isDarkMode ? Colors.btn_dark : Colors.btn },
+          ]}
           onLayout={e => {
             trackWidthRef.current = e.nativeEvent.layout.width;
           }}
@@ -216,9 +242,14 @@ const ValidatePayment = ({ route }) => {
           {validated ? (
             <Text style={styles.validatedLabel}>Validated!!</Text>
           ) : (
-            <View style={styles.sliderTrackLabelContainer} pointerEvents="none">
+            <View
+              style={styles.sliderTrackLabelContainer}
+              pointerEvents="none"
+            >
               <Text style={styles.sliderTrackLabelRegular}>Slide to </Text>
-              <Text style={styles.sliderTrackLabelBold}>Validate Payment</Text>
+              <Text style={styles.sliderTrackLabelBold}>
+                Validate Payment
+              </Text>
             </View>
           )}
 
@@ -304,7 +335,6 @@ const styles = StyleSheet.create({
   paymentCardTitle: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 18,
-    // padding: 25,
     paddingHorizontal: 25,
     paddingBottom: 10,
   },
@@ -375,7 +405,6 @@ const styles = StyleSheet.create({
   knob: {
     position: 'absolute',
     left: 2,
-    // width: '23%',
     height: 56,
     borderRadius: 18,
     backgroundColor: Colors.secondary,

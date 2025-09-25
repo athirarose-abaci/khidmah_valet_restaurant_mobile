@@ -42,12 +42,12 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
         try {
             const otpCode = await getData('otp_code');
             const response = await submitForgotPassword(username, otpCode, newPassword);
-            if (response.status === 'success') {
+            if (response?.status === 'success') {
                 toastContext.showToast('Password reset successfully', 'short', 'success');
                 await removeData('otp_code');
                 setCurrentScreen('login');
             } else {
-                toastContext.showToast(response.message || 'Failed to reset password', 'short', 'error');
+                toastContext.showToast(response?.message || 'Failed to reset password', 'short', 'error');
             }
         } catch (error) {
             const err_msg = Error(error);
@@ -68,24 +68,14 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
     >    
         <View style={styles.formContainer}>
             <View style={styles.textHeader}>
-                <Text style={[styles.mainTitle, { color: isDarkMode ? Colors.white : Colors.primary }]}>Set New Password</Text>
-                <Text style={[styles.subTitle, { color: isDarkMode ? Colors.white : Colors.primary }]}>Please enter your new password</Text>
+                <Text style={[styles.mainTitle, styles.mainTitleColor(isDarkMode)]}>Set New Password</Text>
+                <Text style={[styles.subTitle, styles.subTitleColor(isDarkMode)]}>Please enter your new password</Text>
             </View>
 
             <View style={styles.field_container}>
                 <Text style={[styles.label, styles.labelColor(isDarkMode)]}>New Password</Text>
-                <View
-                        style={[
-                            styles.input_container,
-                            styles.inputContainerColor(isDarkMode),
-                        ]}
-                >
-                    <View
-                        style={[
-                            styles.icon_container,
-                            styles.iconBorderColor(isDarkMode),
-                        ]}
-                    >
+                <View style={[ styles.input_container, styles.inputContainerColor(isDarkMode), ]} >
+                    <View style={[ styles.icon_container, styles.iconBorderColor(isDarkMode), ]} >
                         <Image
                             source={require('../../assets/images/password.png')}
                             style={styles.icon}
@@ -107,7 +97,7 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
                     >
                         <Ionicons
                             name={!showNewPassword ? 'eye-outline' : 'eye-off-outline'}
-                            color={isDarkMode ? '#D3D3D3' : Colors.black}
+                            color={styles.eyeIconColor(isDarkMode)}
                             size={20}
                         />
                     </TouchableOpacity>
@@ -116,18 +106,8 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
 
             <View style={[styles.field_container, styles.fieldContainerSpacing]}>
                 <Text style={[styles.label, styles.labelColor(isDarkMode)]}>Confirm New Password</Text>
-                <View
-                        style={[
-                            styles.input_container,
-                            styles.inputContainerColor(isDarkMode),
-                        ]}
-                >
-                    <View
-                        style={[
-                            styles.icon_container,
-                            styles.iconBorderColor(isDarkMode),
-                        ]}
-                    >
+                <View style={[ styles.input_container, styles.inputContainerColor(isDarkMode), ]} >
+                    <View style={[ styles.icon_container, styles.iconBorderColor(isDarkMode), ]} >
                         <Image
                             source={require('../../assets/images/password.png')}
                             style={styles.icon}
@@ -137,7 +117,7 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
                     <TextInput
                         style={[styles.input, styles.inputWidth]}
                         placeholder="Confirm new password"
-                        placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
+                        placeholderTextColor={styles.inputPlaceholderColor(isDarkMode)}
                         secureTextEntry={!showConfirmPassword}
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
@@ -149,7 +129,7 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
                     >
                         <Ionicons
                             name={!showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-                            color={isDarkMode ? '#D3D3D3' : Colors.black}
+                            color={styles.eyeIconColor(isDarkMode)}
                             size={20}
                         />
                     </TouchableOpacity>
@@ -157,7 +137,11 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
             </View>
 
 			<View style={styles.footerContainer}>
-                <TouchableOpacity style={styles.confirmButton} onPress={handleUpdatePassword} disabled={isLoading}>
+                <TouchableOpacity 
+                    style={styles.confirmButton} 
+                    onPress={handleUpdatePassword} 
+                    disabled={isLoading}
+                >
                     {isLoading ? (
                         <ActivityIndicator size="small" color="#fff" />
                     ) : (
@@ -172,12 +156,10 @@ const SetPasswordComponent = ({ setCurrentScreen }) => {
             >
                 <MaterialIcons
                     name="arrow-back"
-                    color={isDarkMode ? '#F5F5F5' : Colors.primary}
+                    color={styles.backIconColor(isDarkMode)}
                     size={24}
                 />
-                <Text style={[styles.backText, styles.backTextColor(isDarkMode)]}>
-                    Back to Login
-                </Text>
+                <Text style={[styles.backText, styles.backTextColor(isDarkMode)]}> Back to Login </Text>
             </TouchableOpacity>
 		</View>
     </KeyboardAwareScrollView>
@@ -208,12 +190,18 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 		textAlign: 'left',
 	},
+    mainTitleColor: (isDarkMode) => ({
+        color: isDarkMode ? Colors.white : Colors.primary,
+    }),
 	subTitle: {
 		fontSize: 14,
 		fontFamily: 'Inter-Regular',
 		textAlign: 'left',
 		lineHeight: 20,
 	},
+    subTitleColor: (isDarkMode) => ({
+        color: isDarkMode ? Colors.white : Colors.primary,
+    }),
     field_container: {
         width: '100%',
         paddingBottom: 10,
@@ -260,6 +248,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingRight: 22,
     },
+    eyeIconColor: (isDarkMode) => ({
+        color: isDarkMode ? '#D3D3D3' : Colors.black,
+    }),
     icon: {
         width: 20,
         height: 20,
@@ -274,6 +265,9 @@ const styles = StyleSheet.create({
         fontSize: 15,
         textAlign: 'justify',
     },
+    inputPlaceholderColor: (isDarkMode) => ({
+        color: isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder,
+    }),
     inputWidth: {
         width: '73%',
     },
@@ -312,6 +306,9 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     backTextColor: (isDarkMode) => ({
+        color: isDarkMode ? '#F5F5F5' : Colors.primary,
+    }), 
+    backIconColor: (isDarkMode) => ({
         color: isDarkMode ? '#F5F5F5' : Colors.primary,
     }),
 });

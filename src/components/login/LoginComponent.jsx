@@ -37,7 +37,6 @@ const LoginComponent = ({ setCurrentScreen }) => {
     try {
       const userData = await userLogin(userEmail, password);
       if (userData?.password_reset_required) {
-        console.log('userData from the login component', userData)
         const loginData = {
           username: userEmail,
           current_password: password,
@@ -51,9 +50,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
         await storeData('data', JSON.stringify(authData));
       }
     } catch (error) {
-      console.log('error from the login component', error)
       let err_msg = Error(error);
-      console.log('error message from the login component', err_msg)
       toastContext.showToast(err_msg, 'short', 'error');
     } finally {
       setIsLoading(false);
@@ -62,35 +59,26 @@ const LoginComponent = ({ setCurrentScreen }) => {
 
   return (
     <KeyboardAwareScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1 }}
+      style={styles.kbAware}
+      contentContainerStyle={styles.kbAwareContent}
       enableOnAndroid={true}
       extraScrollHeight={0}     
       showsVerticalScrollIndicator={false} 
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={[styles.title, { color: isDarkMode ? Colors.white : Colors.primary }]}>
+      <Text style={[styles.title, styles.titleColor(isDarkMode)]}>
         Sign in
       </Text>
 
       {/* Email Field */}
       <View style={styles.field_container}>
-        <Text style={[styles.label, { color: isDarkMode ? '#D3D3D3' : Colors.primary }]}>
+        <Text style={[styles.label, styles.labelColor(isDarkMode)]}>
           Email Address
         </Text>
-        <View
-          style={[
-            styles.input_container,
-            {
-              backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
-              borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
-            },
-          ]}
-        >
+        <View style={[ styles.input_container,styles.inputContainerColor(isDarkMode), ]} >
           <View
             style={[
-              styles.icon_container,
-              { borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA' },
+              styles.icon_container,styles.iconContainerBorder(isDarkMode),
             ]}
           >
             <Image
@@ -102,9 +90,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <TextInput
             style={styles.input}
             placeholder="emailaddress@domain.com"
-            placeholderTextColor={
-              isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder
-            }
+            placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
             value={userEmail}
             onChangeText={text => setUserEmail(text)}
             keyboardType="email-address"
@@ -115,22 +101,14 @@ const LoginComponent = ({ setCurrentScreen }) => {
 
       {/* Password Field */}
       <View style={[styles.field_container, { marginTop: 5 }]}>
-        <Text style={[styles.label, { color: isDarkMode ? '#D3D3D3' : Colors.primary }]}>
+        <Text style={[styles.label, styles.labelColor(isDarkMode)]}>
           Password
         </Text>
-        <View
-          style={[
-            styles.input_container,
-            {
-              backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
-              borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
-            },
-          ]}
-        >
+        <View style={[ styles.input_container,styles.inputContainerColor(isDarkMode), ]} >
           <View
             style={[
               styles.icon_container,
-              { borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA' },
+              styles.iconContainerBorder(isDarkMode),
             ]}
           >
             <Image
@@ -142,23 +120,19 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <TextInput
             style={[styles.input, { width: '73%' }]}
             placeholder="**************"
-            placeholderTextColor={
-              isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder
-            }
+            placeholderTextColor={isDarkMode ? Colors.input_placeholder_dark : Colors.input_placeholder}
             value={password}
             onChangeText={text => setPassword(text)}
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity
             style={styles.eye_icon_container}
-            onPress={() => {
-              setShowPassword(!showPassword);
-            }}
+            onPress={() => { setShowPassword(!showPassword); }}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons
               name={!showPassword ? 'eye-outline' : 'eye-off-outline'}
-              color={isDarkMode ? '#D3D3D3' : Colors.black}
+              color={styles.eyeIconColor(isDarkMode)}
               size={20}
             />
           </TouchableOpacity>
@@ -177,8 +151,7 @@ const LoginComponent = ({ setCurrentScreen }) => {
           <>
             <Text
               style={[
-                styles.button_label,
-                { color: isDarkMode ? '#F5F5F5' : Colors.white },
+                styles.button_label,styles.buttonLabelColor(isDarkMode),
               ]}
             >
               Sign In
@@ -205,6 +178,12 @@ const LoginComponent = ({ setCurrentScreen }) => {
 };
 
 const styles = StyleSheet.create({
+  kbAware: {
+    flex: 1,
+  },
+  kbAwareContent: {
+    flexGrow: 1,
+  },
   title: {
     fontSize: 30,
     fontFamily: 'Poppins-Medium',
@@ -212,6 +191,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: Colors.primary,
   },
+  titleColor: (isDarkMode) => ({
+    color: isDarkMode ? Colors.white : Colors.primary,
+  }),
   field_container: {
     width: '100%',
     paddingBottom: 10,
@@ -222,6 +204,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 5,
   },
+  labelColor: (isDarkMode) => ({
+    color: isDarkMode ? '#D3D3D3' : Colors.primary,
+  }),
   input_container: {
     width: '100%',
     height: 55,
@@ -231,6 +216,10 @@ const styles = StyleSheet.create({
     marginTop: 5,
     borderWidth: 1,
   },
+  inputContainerColor: (isDarkMode) => ({
+    backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
+    borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
+  }),
   icon_container: {
     width: '15%',
     height: '85%',
@@ -238,6 +227,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  iconContainerBorder: (isDarkMode) => ({
+    borderColor: isDarkMode ? 'rgba(230, 236, 237, 0.1)' : '#DDE8EA',
+  }),
   eye_icon_container: {
     width: '12%',
     height: '85%',
@@ -245,6 +237,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: 22,
   },
+  eyeIconColor: (isDarkMode) => ({
+    color: isDarkMode ? '#D3D3D3' : Colors.black,
+  }),
   icon: {
     width: 20,
     height: 20,
@@ -275,6 +270,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: 16,
   },
+  buttonLabelColor: (isDarkMode) => ({
+    color: isDarkMode ? '#F5F5F5' : Colors.white,
+  }),
   fgp_container: {
     marginTop: 15,
   },

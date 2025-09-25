@@ -1,13 +1,21 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../constants/customStyles';
 import { useSelector } from 'react-redux';
 
-const RecentActivityCard = ({ plate, amount, onLayout }) => {
+const RecentActivityCard = ({ plate, amount, date, time, txn_id, onLayout }) => {
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
+  const navigation = useNavigation();
+
+  const handlePress = () => {
+    if (txn_id) {
+      navigation.navigate('PaymentHistoryDetails', { txnId: txn_id });
+    }
+  };
 
   return (
-    <View style={styles.transactionItemContainer} onLayout={onLayout}>
+    <TouchableOpacity activeOpacity={0.8} onPress={handlePress} style={styles.transactionItemContainer} onLayout={onLayout}>
       <View
         style={[
           styles.transactionInnerCard,
@@ -20,43 +28,73 @@ const RecentActivityCard = ({ plate, amount, onLayout }) => {
             style={styles.transactionCarImg}
           />
         </View>
-        <Text
-          style={[
-            styles.plateNumberText,
-            { flex: 1, color: isDarkMode ? Colors.white : Colors.primary },
-          ]}
-        >
-          {plate}
-        </Text>
-        <View
-          style={[
-            styles.amountContainer,
-            {
-              backgroundColor: isDarkMode
-                ? Colors.small_container_dark_bg
-                : '#F9F9F9',
-            },
-          ]}
-        >
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
           <Text
             style={[
-              styles.amountText,
-              { color: isDarkMode ? Colors.white : Colors.black },
+              styles.plateNumberText,
+              { color: isDarkMode ? Colors.white : Colors.primary },
+            ]}
+            numberOfLines={1}
+          >
+            {plate}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View
+            style={[
+              styles.amountContainer,
+              {
+                backgroundColor: isDarkMode
+                  ? Colors.small_container_dark_bg
+                  : '#F9F9F9',
+              },
             ]}
           >
-            {amount}{' '}
             <Text
               style={[
-                styles.currencyText,
+                styles.amountText,
                 { color: isDarkMode ? Colors.white : Colors.black },
               ]}
             >
-              AED
+              {amount}{' '}
+              <Text
+                style={[
+                  styles.currencyText,
+                  { color: isDarkMode ? Colors.white : Colors.black },
+                ]}
+              >
+                AED
+              </Text>
             </Text>
-          </Text>
+          </View>
+
+          {(date || time) && (
+            <View style={{ marginLeft: 8, alignItems: 'flex-start' }}>
+              {date && (
+                <Text
+                  style={[
+                    styles.dateText,
+                    { color: isDarkMode ? '#CCCCCC' : '#6B6B6B' },
+                  ]}
+                >
+                  {date}
+                </Text>
+              )}
+              {time && (
+                <Text
+                  style={[
+                    styles.timeText,
+                    { color: isDarkMode ? '#A0A0A0' : '#8A8A8A' },
+                  ]}
+                >
+                  {time}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -114,5 +152,14 @@ const styles = StyleSheet.create({
   currencyText: {
     fontFamily: 'Inter-Light',
     fontSize: 14,
+  },
+  dateText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 13,
+  },
+  timeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 11,
+    marginTop: 2,
   },
 });

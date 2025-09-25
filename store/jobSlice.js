@@ -5,6 +5,7 @@ const jobSlice = createSlice({
     initialState: {
         entityDetails: [],
         entityValidationDetails: [],
+        currentNfcId: null,
     },
     reducers: {
         setEntityDetails: (state, action) => {
@@ -19,8 +20,21 @@ const jobSlice = createSlice({
         clearEntityValidationDetails: (state) => {
             state.entityValidationDetails = [];
         },
+        setCurrentNfcId: (state, action) => {
+            state.currentNfcId = action.payload;
+        },
+        clearCurrentNfcId: (state) => {
+            state.currentNfcId = null;
+        },
     }
 });
 
-export const { setEntityDetails, setEntityValidationDetails, clearEntityDetails, clearEntityValidationDetails } = jobSlice.actions;
+export const {
+    setEntityDetails,
+    setEntityValidationDetails,
+    clearEntityDetails,
+    clearEntityValidationDetails,
+    setCurrentNfcId,
+    clearCurrentNfcId,
+} = jobSlice.actions;
 export default jobSlice.reducer;

@@ -87,7 +87,6 @@ export const submitForgotPassword = async ( username, otp_code, new_password, ) 
 //************ CHANGE PASSWORD ************ //
 export const changePassword = async (payload) => {
 
-    console.log('changePasswordPayload', payload);
     try {
       const response = await authAxios.post('users/reset-password/', payload);
       return response;
@@ -110,7 +109,6 @@ export const userProfile = async() => {
 export const updateUserProfile = async (payload) => {
     try{
         const response = await authAxios.patch('users/profile/',payload);
-        console.log('updateUserProfileResponse',response)
         return response;
     }catch(error){
         throw error;
@@ -122,7 +120,6 @@ export const updateUserProfile = async (payload) => {
 export const logoutUser = async () => {
     try {
       const response = await authAxios.post('users/logout/');
-      console.log('logoutUserResponse',response)
       return response.data;
     } catch (error) {
       throw error;

@@ -8,7 +8,6 @@ import { requestForgotPasswordOTP, verifyForgotPasswordOTP } from "../../apis/au
 import { getData, storeData } from "../../helpers/asyncStorageHelper";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";import MaterialIcons from '@react-native-vector-icons/material-icons';
 
-
 const OTP_LENGTH = 8;
 
 const VerifyOTPComponent = ({ setCurrentScreen }) => {
@@ -16,7 +15,6 @@ const VerifyOTPComponent = ({ setCurrentScreen }) => {
 	const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(""));
 	const inputRefs = useMemo(() => Array.from({ length: OTP_LENGTH }, () => React.createRef()), []);
     const toastContext = useContext(ToastContext);
-    const [isLoading, setIsLoading] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const [isResendLoading, setIsResendLoading] = useState(false);
 
@@ -54,18 +52,15 @@ const VerifyOTPComponent = ({ setCurrentScreen }) => {
 		setIsConfirmLoading(true);
 		try {
 			const response = await verifyForgotPasswordOTP(composedOtp, username);
-            console.log(response, "from resend otp");
-			if (response.status === 'success') {
+			if (response?.status === 'success') {
 				toastContext.showToast('OTP verified successfully', 'short', 'success');
 				await storeData('otp_code', composedOtp);
 				setCurrentScreen('setPassword');
 			} else {
-				toastContext.showToast(response.message || 'Invalid OTP', 'short', 'error');
+				toastContext.showToast(response?.message || 'Invalid OTP', 'short', 'error');
 			}
 		} catch (error) {
-            console.log(error, "from resend otp")
-			const err_msg = Error(error);
-            console.log(err_msg, "from resend otp")
+			let err_msg = Error(error);
 			toastContext.showToast(err_msg, 'short', 'error');
 		} finally {
 			setIsConfirmLoading(false);
@@ -82,7 +77,7 @@ const VerifyOTPComponent = ({ setCurrentScreen }) => {
         setIsResendLoading(true);
         try {
             const response = await requestForgotPasswordOTP(username);
-            if(response.status === 'success') {
+            if(response?.status === 'success') {
                 toastContext.showToast('OTP resend to your email address successfully', 'short', 'success');
 				await storeData('otp_code', composedOtp);
             }
@@ -105,8 +100,10 @@ const VerifyOTPComponent = ({ setCurrentScreen }) => {
     >  
 		<View style={styles.formContainer}>
 			<View style={styles.textHeader}>
-				<Text style={[styles.mainTitle, { color: isDarkMode ? Colors.white : Colors.primary }]}>Enter OTP</Text>
-				<Text style={[styles.subTitle, { color: isDarkMode ? Colors.white : Colors.primary }]}>Please enter the 8-digit code sent to your email address</Text>
+				<Text style={[styles.mainTitle, styles.mainTitleColor(isDarkMode)]}>Enter OTP</Text>
+				<Text style={[styles.subTitle, styles.subTitleColor(isDarkMode)]}>
+					Please enter the 8-digit code sent to your email address
+				</Text>
 			</View>
 
 			<View style={styles.otpContainer}>
@@ -117,9 +114,9 @@ const VerifyOTPComponent = ({ setCurrentScreen }) => {
 						style={[
 							styles.otpInput,
 							{
-								borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
-								backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
-								color: isDarkMode ? Colors.white : Colors.primary,
+								borderColor: styles.inputBorderColor(isDarkMode),
+								backgroundColor: styles.inputBgColor(isDarkMode),
+								color: styles.inputTextColor(isDarkMode),
 							},
 						]}
 						maxLength={1}
@@ -164,7 +161,7 @@ const VerifyOTPComponent = ({ setCurrentScreen }) => {
             >
                 <MaterialIcons
                     name="arrow-back"
-                    color={isDarkMode ? '#F5F5F5' : Colors.primary}
+                    color={styles.backIconColor(isDarkMode)}
                     size={24}
                 />
                 <Text style={[styles.backText, styles.backTextColor(isDarkMode)]}>
@@ -184,12 +181,10 @@ const styles = StyleSheet.create({
     },
     kbAwareContent: {
         flexGrow: 1,
-       //  paddingBottom: 20,
     },
 	formContainer: {
 		flex: 1,
 		justifyContent: 'center',
-		// paddingHorizontal: 10,
 	},
 	textHeader: {
 		alignSelf: 'flex-start',
@@ -202,12 +197,18 @@ const styles = StyleSheet.create({
 		marginBottom: 15,
 		textAlign: 'left',
 	},
+	mainTitleColor: (isDarkMode) => ({
+		color: isDarkMode ? Colors.white : Colors.primary,
+	}),
 	subTitle: {
 		fontSize: 14,
 		fontFamily: 'Inter-Regular',
 		textAlign: 'left',
 		lineHeight: 20,
 	},
+	subTitleColor: (isDarkMode) => ({
+		color: isDarkMode ? Colors.white : Colors.primary,
+	}),
 	otpContainer: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -223,6 +224,15 @@ const styles = StyleSheet.create({
 		fontSize: 18,
 		fontFamily: 'Inter-Medium',
 	},
+	inputBorderColor: (isDarkMode) => ({
+		borderColor: isDarkMode ? Colors.input_border_dark : Colors.input_border,
+	}),
+	inputBgColor: (isDarkMode) => ({
+		backgroundColor: isDarkMode ? Colors.input_bg_dark : Colors.input_bg,
+	}),
+	inputTextColor: (isDarkMode) => ({
+		color: isDarkMode ? Colors.white : Colors.primary,
+	}),
 	footerContainer: {
 		width: '100%',
 		alignItems: 'center',
@@ -283,6 +293,9 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     backTextColor: (isDarkMode) => ({
+        color: isDarkMode ? '#F5F5F5' : Colors.primary,
+    }),
+    backIconColor: (isDarkMode) => ({
         color: isDarkMode ? '#F5F5F5' : Colors.primary,
     }),
 });

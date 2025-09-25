@@ -27,17 +27,13 @@ const ForgotPasswordComponent = ({ setCurrentScreen }) => {
         setIsLoading(true);
         try {
             const response = await requestForgotPasswordOTP(email);
-            console.log(response, "response from forgotpasswordcomponent");
-            console.log(email, 'email from forgotpasswordscreen')
             if(response?.status === 'success'){
                 await storeData('username', email);
                 toastContext.showToast('OTP sent to your email address', 'short', 'success');
                 setCurrentScreen('verifyOTP');
             }
         } catch (error) {
-            console.log('error from the forgot password comp', error)
             let err_msg = Error(error);
-            console.log('error message from forgot password', err_msg)
             toastContext.showToast(err_msg, 'short', 'error');
         } finally {
             setIsLoading(false);

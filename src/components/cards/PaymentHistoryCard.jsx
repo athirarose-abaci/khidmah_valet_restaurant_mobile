@@ -1,21 +1,29 @@
-import { StyleSheet, Text, View, Image } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { Colors } from '../../constants/customStyles';
 import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 
 const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index }) => {
+  const navigation = useNavigation();
   const isDarkMode = useSelector(state => state.themeSlice.isDarkMode);
-  console.log(item, "item from history card")
+
+  const handlePress = () => {
+    if (item?.id) {
+      navigation.navigate('PaymentHistoryDetails', { txnId: item.id });
+    }
+  };
+
   return (
-    <View style={[styles.mainContainer, {backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white}]}>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={handlePress}
+      style={[ styles.mainContainer, { backgroundColor: isDarkMode ? Colors.container_dark_bg : Colors.white }, ]}
+    >
       {showHeader && (
-        <View 
-          style={[styles.headerContainer, {backgroundColor: isDarkMode ? '#313131' : '#F9F9F9'}]}
-        >
+        <View style={[ styles.headerContainer, { backgroundColor: isDarkMode ? '#313131' : '#F9F9F9' }, ]} >
           <Text style={styles.headerDate}>{date}</Text>
-          <Text style={styles.headerCount}>
-            {`${totalCount} Transactions`}
-          </Text>
+          <Text style={styles.headerCount}>{`${totalCount} Transactions`}</Text>
         </View>
       )}
 
@@ -23,26 +31,28 @@ const PaymentHistoryCard = ({ item, showHeader = false, date, totalCount, index 
         <View style={styles.itemContainer}>
           <View style={styles.container}>
             <Image source={item.image} style={styles.avatar} />
-            <Text style={[styles.plate, {color: isDarkMode ? Colors.secondary : Colors.primary}]}>{item.plate}</Text>
+            <Text style={[ styles.plate, { color: isDarkMode ? Colors.secondary : Colors.primary }, ]} >
+              {item.plate}
+            </Text>
 
-            <View style={[styles.amountContainer, {backgroundColor: isDarkMode ? Colors.small_container_dark_bg : '#F9F9F9'}]}>
-              <Text style={[styles.amount,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.amount}</Text>
-              <Text style={[styles.currency,{color: isDarkMode ? Colors.white : '#909090'}]}> AED</Text>
-            </View>
-
-            <Text style={[styles.time,{color: isDarkMode ? Colors.white : '#909090'}]}>{item.time}</Text>
-          </View>
-
-            <View style={styles.modifiedByContainer}>
-              <Text style={[styles.modifiedByText, {color: isDarkMode ? Colors.white : '#909090'}]}>
-                Modified by: <Text style={styles.modifiedByName}>{item.modified_by}</Text>
+            <View style={[ styles.amountContainer, { backgroundColor: isDarkMode ? Colors.small_container_dark_bg : '#F9F9F9', }, ]} >
+              <Text style={[ styles.amount, { color: isDarkMode ? Colors.white : '#909090' }, ]} >
+                {item.amount}
+              </Text>
+              <Text style={[ styles.currency, { color: isDarkMode ? Colors.white : '#909090' }, ]} >
+                {' '}AED
               </Text>
             </View>
+
+            <Text style={[ styles.time, { color: isDarkMode ? Colors.white : '#909090' }, ]} >
+              {item.time}
+            </Text>
+          </View>
         </View>
       )}
 
       {item && index < totalCount - 1 && <View style={styles.divider} />}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -50,10 +60,10 @@ export default PaymentHistoryCard;
 
 const styles = StyleSheet.create({
   mainContainer: {
-      width: '100%',
+    width: '100%',
   },
   headerContainer: {
-    width: '100%',  
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -61,11 +71,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     marginVertical: 8,
-    // Accent strip
     borderLeftWidth: 4,
     borderLeftColor: Colors.primary,
   },
-  
   headerDate: {
     fontFamily: 'Inter-Regular',
     fontSize: 12,
@@ -96,7 +104,7 @@ const styles = StyleSheet.create({
   modifiedByContainer: {
     paddingHorizontal: 35,
     paddingBottom: 10,
-    marginLeft: 65, // Align with plate text (avatar width + margin)
+    marginLeft: 65,
   },
   modifiedByText: {
     fontFamily: 'Inter-Regular',

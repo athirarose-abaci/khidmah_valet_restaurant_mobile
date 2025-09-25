@@ -1,7 +1,7 @@
-// components/CalendarModal.js
 import React from 'react';
 import { Modal, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import dayjs from 'dayjs';
 import { getMarkedDates } from '../../helpers/markedDatesHelper';
 import { Colors } from '../../constants/customStyles';
 
@@ -12,7 +12,8 @@ const CalendarModal = ({
   setSelectedDate,
   selectedDateRef,
   onRangeSelected,
-  onClear
+  onClear,
+  isDarkMode = false,
 }) => {
   return (
     <Modal
@@ -22,7 +23,7 @@ const CalendarModal = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, {backgroundColor: isDarkMode ? Colors.container_dark_bg : '#fff'}]}>
           <Calendar
             markingType={'period'}
             markedDates={getMarkedDates(
@@ -34,19 +35,29 @@ const CalendarModal = ({
                 const newSelection = { startDate: day.dateString, endDate: null };
                 setSelectedDate(newSelection);
                 selectedDateRef.current = newSelection;
+                console.log('newSelection1',newSelection)
               } else if (selectedDate?.startDate && !selectedDate?.endDate) {
-                const newSelection = { ...selectedDate, endDate: day.dateString };
-                setSelectedDate(newSelection);
-                selectedDateRef.current = newSelection;
-
-                // ✅ pass the completed range back to parent
-                onRangeSelected(newSelection);
+                // Check if the selected date is before the start date
+                if (day.dateString < selectedDate.startDate) {
+                  // If previous date is selected, make it the new start date
+                  const newSelection = { startDate: day.dateString, endDate: null };
+                  setSelectedDate(newSelection);
+                  selectedDateRef.current = newSelection;
+                  console.log('newSelection_previous',newSelection)
+                } else {
+                  // Normal end date selection
+                  const newSelection = { ...selectedDate, endDate: day.dateString };
+                  setSelectedDate(newSelection);
+                  selectedDateRef.current = newSelection;
+                  console.log('newSelection2',newSelection)
+                  onRangeSelected(newSelection);
+                }
               }
             }}
           />
 
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[styles.closeButton, {backgroundColor: Colors.secondary}]}
             onPress={() => {
               setSelectedDate(null);
               selectedDateRef.current = null;
@@ -54,7 +65,7 @@ const CalendarModal = ({
               onClose();
             }}
           >
-            <Text style={{ color: '#fff', fontWeight: '600' }}>Clear & Close</Text>
+            <Text style={{ color: Colors.white, fontWeight: '600' }}>Clear & Close</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -72,10 +83,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '90%',
+    width: '85%',
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 10,
+    paddingVertical: 32,
     alignItems: 'center',
     elevation: 5,
   },

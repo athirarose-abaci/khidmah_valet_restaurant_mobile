@@ -8,10 +8,12 @@ const transformRecentActivity = (apiResponse, limit = 5) => {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, limit)
     .map(txn => ({
-      id: txn.id.toString(),
-      plate: txn.vehicle?.plate_number || 'Unknown',
-      amount: txn.rate || '0.00',
-      time: moment(txn.created_at).format('h:mm A'), 
+      id: txn?.id.toString(),
+      plate: txn?.vehicle?.plate_number || 'Unknown',
+      amount: txn?.entity?.rate || '0.00',
+      txn_id: txn.id,
+      time: moment(txn?.created_at).format('h:mm A'),
+      date: moment(txn?.created_at).format('DD MMM YYYY'),
     }));
 };
 

@@ -31,7 +31,7 @@ const SystemStatusErrorScreen = () => {
     setIsRetrying(true);
     try {
       const {success, adminUsersExist} = await checkSystemStatus();
-      
+           
       if (success && adminUsersExist) {
         // If system is now available, trigger the auth toggle to show main app
         dispatch(setAuthToggle(!authToggle));

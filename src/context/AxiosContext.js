@@ -85,7 +85,6 @@ authAxios.interceptors.request.use(
         storeData('data', JSON.stringify(updatedUser));
         // }
       } catch (error) {
-        console.log('catchError', error.response);
         if (axios.isCancel(error)) {
           throw error; // Re-throw cancel errors
         }
@@ -100,7 +99,6 @@ authAxios.interceptors.request.use(
     return config;
   },
   error => {
-    console.log('error', error.response);
     if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
