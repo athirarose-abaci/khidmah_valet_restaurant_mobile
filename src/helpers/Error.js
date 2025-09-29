@@ -29,7 +29,7 @@ function Error(error) {
       } else if (error?.response?.data) {
         error_msg = error?.response?.data;
       }
-    } else if(error?.response?.status===401){
+    } else if(error?.response?.status === 401){
       error_msg = 'Authorization failed. Please login again.'
     }else if (error?.response?.data?.detail) {
       error_msg = error?.response?.data?.detail;

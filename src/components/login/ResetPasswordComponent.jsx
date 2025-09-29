@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, StyleSheet, Image, TextInput, TouchableOpacity, ActivityIndicator, } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import React, { useContext, useState } from 'react';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import MaterialIcons from '@react-native-vector-icons/material-icons';
@@ -47,8 +48,15 @@ import { Colors } from '../../constants/customStyles';
       }
     };
   
-    return (
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+  return (
+    <KeyboardAwareScrollView
+        style={styles.kbAware}
+        contentContainerStyle={styles.kbAwareContent}
+        enableOnAndroid={true}
+        extraScrollHeight={0}
+        showsVerticalScrollIndicator={false} 
+        keyboardShouldPersistTaps="handled"
+    >  
         <AbaciLoader visible={isLoading} />
         <View style={styles.titleContainer}>
           <Text style={[styles.greeting, {color: isDarkMode ? Colors.white : Colors.font_primary}]}>Hi, {loginCredentials?.first_name || 'User'} </Text>
@@ -143,11 +151,17 @@ import { Colors } from '../../constants/customStyles';
             </>
           )}
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     );
   };
   
   const styles = StyleSheet.create({
+    kbAware: {
+        flex: 1,
+    },
+    kbAwareContent: {
+        flexGrow: 1,
+    },
     titleContainer: {
       marginTop: 20,
       marginBottom: 10,
