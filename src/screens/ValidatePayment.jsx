@@ -103,7 +103,7 @@ const ValidatePayment = ({ route }) => {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[ styles.title, { color: isDarkMode ? Colors.white : Colors.primary }, ]} >
-          Validate Payment
+          Validate Parking
         </Text>
 
         <MaterialIcons
@@ -248,7 +248,7 @@ const ValidatePayment = ({ route }) => {
             >
               <Text style={styles.sliderTrackLabelRegular}>Slide to </Text>
               <Text style={styles.sliderTrackLabelBold}>
-                Validate Payment
+                Validate Parking
               </Text>
             </View>
           )}

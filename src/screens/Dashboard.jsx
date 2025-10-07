@@ -324,7 +324,7 @@ const Dashboard = ({navigation}) => {
 
           }}
         >
-          <Text style={[styles.validateButtonText, {color: isDarkMode ? Colors.white : Colors.white}]}>Validate Payment</Text>
+          <Text style={[styles.validateButtonText, {color: isDarkMode ? Colors.white : Colors.white}]}>Validate Parking</Text>
         </TouchableOpacity>
       {/* </Animated.View> */}
       </View>

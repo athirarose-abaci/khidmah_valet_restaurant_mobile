@@ -8,7 +8,7 @@ const CheckLottie = ({ style, autoPlay = true, loop = true, ...rest }) => {
   return (
     <LottieView
       ref={animation}
-      source={require('../assets/lottie/check.json')}
+      source={require('../../assets/lottie/check.json')}
       style={[styles.default, style]}
       autoPlay={autoPlay}
       loop={loop}

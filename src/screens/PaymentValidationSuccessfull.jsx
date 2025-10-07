@@ -1,7 +1,7 @@
 import { StatusBar, StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
 import { Colors } from '../constants/customStyles';
-import CheckLottie from '../components/CheckLottie';
+import CheckLottie from '../components/lottie/CheckLottie';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
@@ -37,7 +37,7 @@ const PaymentValidationSuccessfull = () => {
             ? `Customer’s valet parking${'\n'}has already been validated successfully.`
             : isVipVehicle
             ? `This is a VIP vehicle and${'\n'} does not require validation for valet parking.`
-            : "Customer’s valet parking payment${'\n'}was successfully validated."}
+            : `Customer’s valet parking payment${'\n'}was successfully validated.`}
         </Text>
 
         <View style={styles.buttonRow}>
