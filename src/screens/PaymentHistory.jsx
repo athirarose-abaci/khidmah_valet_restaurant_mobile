@@ -278,6 +278,7 @@ const PaymentHistory = () => {
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         selectedDateRef={selectedDateRef}
+        isDarkMode={isDarkMode}
         onRangeSelected={(newSelection) => {
           setShowDatePicker(false);
           dispatch(clearPaymentHistory());

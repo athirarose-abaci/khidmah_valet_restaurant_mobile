@@ -1,4 +1,3 @@
-import moment from "moment";
 import { authAxios } from "../context/AxiosContext";
 
 export const transactionHistory = async (entityId, pageNumber, searchQuery = '', limit, dateRange) => {
@@ -12,7 +11,6 @@ export const transactionHistory = async (entityId, pageNumber, searchQuery = '',
             const nextDay = endDate.toISOString().split('T')[0];   
             url = url+`&start_date=${dateRange.startDate} 00:00&end_date=${nextDay} 00:00`
         }
-        console.log(url, "url from transaction history api")
         const response = await authAxios.get(url);
         return response.data;
     }catch(error){

@@ -18,7 +18,7 @@ import { clearCookies } from '../helpers/clearCookieHelper';
 import { ToastContext } from '../context/ToastContext';
 import Error from '../helpers/Error';
 import AbaciLoader from '../components/AbaciLoader';
-
+import DeviceInfo from 'react-native-device-info';
 
 const Profile = ({}) => {
   const navigation = useNavigation();
@@ -196,7 +196,7 @@ const Profile = ({}) => {
 
             <View style={styles.versionContainer}>
               <Text style={[styles.versionText, {color: '#999999'}]}>
-                {'v1.0.0'}
+              {'v' + DeviceInfo.getVersion()}
               </Text>
             </View>
           </ScrollView>

@@ -1,3 +1,4 @@
+import DeviceInfo from "react-native-device-info";
 import { authAxios, publicAxios } from "../context/AxiosContext";
 
 //*********************// SYSTEM STATUS //*********************//
@@ -21,7 +22,7 @@ export const checkSystemStatus = async () => {
     const payload = {
         username: email,
         password: password,
-        version_code:'1.0.0',
+        version_code:DeviceInfo.getVersion(),
     }
     try{
         const response = await publicAxios.post('users/login/',payload);

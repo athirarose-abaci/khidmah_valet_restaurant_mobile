@@ -30,6 +30,28 @@ const CalendarModal = ({
               selectedDate?.startDate,
               selectedDate?.endDate
             )}
+            theme={{
+              backgroundColor: isDarkMode ? Colors.container_dark_bg : '#fff',
+              calendarBackground: isDarkMode ? Colors.container_dark_bg : '#fff',
+              textSectionTitleColor: isDarkMode ? Colors.white : Colors.primary,
+              selectedDayBackgroundColor: Colors.secondary,
+              selectedDayTextColor: Colors.white,
+              todayTextColor: Colors.secondary,
+              dayTextColor: isDarkMode ? Colors.white : Colors.black,
+              textDisabledColor: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              dotColor: Colors.secondary,
+              selectedDotColor: Colors.white,
+              arrowColor: isDarkMode ? Colors.white : Colors.primary,
+              disabledArrowColor: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+              monthTextColor: isDarkMode ? Colors.white : Colors.primary,
+              indicatorColor: Colors.secondary,
+              textDayFontWeight: '500',
+              textMonthFontWeight: '600',
+              textDayHeaderFontWeight: '500',
+              textDayFontSize: 16,
+              textMonthFontSize: 18,
+              textDayHeaderFontSize: 14,
+            }}
             onDayPress={(day) => {
               if (!selectedDate?.startDate || (selectedDate?.startDate && selectedDate?.endDate)) {
                 const newSelection = { startDate: day.dateString, endDate: null };
@@ -84,7 +106,6 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '85%',
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 32,
     alignItems: 'center',
